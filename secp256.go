@@ -1,9 +1,11 @@
 package secp256
-
 /*
-#cgo CFLAGS: -std=gnu99
-#cgo LDFLAGS: -L. -L./lib -L../../../lib -Wl,-rpath='./lib/' -lsecp256k1 -lgmp
-#include "./include/secp256k1.h"
+#cgo CFLAGS: -std=gnu99 -Wno-error
+#cgo LDFLAGS: -lgmp
+#define USE_FIELD_5X64
+#define USE_NUM_GMP
+#define USE_FIELD_INV_BUILTIN
+#include "./secp256k1/src/secp256k1.c"
 */
 import "C"
 
@@ -13,6 +15,18 @@ import (
 )
 //#include "./src/secp256k1.c"
 //removing the "-std=std99" or replacing it with "-std=gnu99"
+//#cgo LDFLAGS: -L. -L./lib -L../../../lib -Wl,-rpath='./lib/' -lsecp256k1 -lgmp
+
+//#include "./include/secp256k1.h"
+
+/*
+#cgo CFLAGS: -std=gnu99 -Wno-error
+#cgo LDFLAGS: -L. -L./lib -L../../../lib -Wl,-rpath='./lib/' -lsecp256k1 -lgmp
+#define USE_FIELD_5X64
+#define USE_NUM_GMP
+#define USE_FIELD_INV_BUILTIN
+#include "./secp256k1/src/secp256k1.c"
+*/
 
 /*
     Todo:
@@ -136,8 +150,6 @@ int secp256k1_ecdsa_pubkey_verify(const unsigned char *pubkey, int pubkeylen);
  *           0: secret was invalid, try again.
  *
 int secp256k1_ecdsa_pubkey_create(unsigned char *pubkey, int *pubkeylen, const unsigned char *seckey, int compressed);
-
-
 */
 
 
@@ -155,7 +167,7 @@ func init() {
 }
 
 func GenerateKeyPair() ([]byte, []byte) {
-    return CC.CreateKeys()
+    return CreateKeys()
 }
 
 
