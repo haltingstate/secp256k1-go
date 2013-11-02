@@ -36,7 +36,6 @@ import (
  response code is presented, thus making replay attacks virtually impossible.
 
 can verify client/server match without sending password over network
-
 */
 
 /*
@@ -141,12 +140,10 @@ int secp256k1_ecdsa_pubkey_create(unsigned char *pubkey, int *pubkeylen, const u
 
 */
 
-type CryptoContext struct {
-}
 
 var lock = make(chan int, 1)
-var CC CryptoContext;
-var g_k *C.struct_EC_KEY;
+
+//var g_k *C.struct_EC_KEY;
 
 func unlock() {
     lock <- 1
@@ -162,12 +159,12 @@ func GenerateKeyPair() ([]byte, []byte) {
 }
 
 
-func (g CryptoContext) CreateKeys() ([]byte, []byte) {
+func CreateKeys() ([]byte, []byte) {
     return nil,nil
 }
 
 
-func (g CryptoContext) Sign(hash_in []byte ) []byte {
+func Sign(hash_in []byte ) []byte {
     return nil
 }
 
