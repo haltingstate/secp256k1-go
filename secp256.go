@@ -205,8 +205,8 @@ func Sign(msg []byte, seckey []byte) []byte {
         log.Panic() //invalid seckey
     }
 
-    ret := secp256k1_ecdsa_sign_compact(
-        msg_ptr, C.int(len(msg))),
+    ret := C.secp256k1_ecdsa_sign_compact(
+        msg_ptr, C.int(len(msg)),
         sig_ptr,
         seckey_ptr,
         nonce_ptr,
