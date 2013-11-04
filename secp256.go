@@ -138,7 +138,17 @@ int secp256k1_ecdsa_pubkey_create(
     const unsigned char *seckey, int compressed);
 */
 
-//returns pubkey, seckey
+/** Compute the public key for a secret key.
+ *  In:     compressed: whether the computed public key should be compressed
+ *          seckey:     pointer to a 32-byte private key.
+ *  Out:    pubkey:     pointer to a 33-byte (if compressed) or 65-byte (if uncompressed)
+ *                      area to store the public key.
+ *          pubkeylen:  pointer to int that will be updated to contains the pubkey's
+ *                      length.
+ *  Returns: 1: secret was valid, public key stores
+ *           0: secret was invalid, try again.
+ */
+
 func GenerateKeyPair() ([]byte, []byte) {
     pubkey_len := C.int(0)
     const seckey_len = 32
@@ -160,16 +170,96 @@ func GenerateKeyPair() ([]byte, []byte) {
 }
 
 
-func Sign(hash_in []byte ) []byte {
-    return nil
+/* 
+*  Create a compact ECDSA signature (64 byte + recovery id).
+*  Returns: 1: signature created
+*           0: nonce invalid, try another one
+*  In:      msg:    the message being signed
+*           msglen: the length of the message being signed
+*           seckey: pointer to a 32-byte secret key (assumed to be valid)
+*           nonce:  pointer to a 32-byte nonce (generated with a cryptographic PRNG)
+*  Out:     sig:    pointer to a 64-byte array where the signature will be placed.
+*           recid:  pointer to an int, which will be updated to contain the recovery id.
+*/
+
+/*
+int secp256k1_ecdsa_sign_compact(const unsigned char *msg, int msglen,
+                                 unsigned char *sig64,
+                                 const unsigned char *seckey,
+                                 const unsigned char *nonce,
+                                 int *recid);
+*/
+
+func Sign(msg []byte, seckey []byte) []byte {
+    var nonce []byte = not_secure.RandByte(32) //going to get bitcoins stolen!
+
+    var sig []byte = make([]byte,65)
+    var recid C.int;
+
+    var msg_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&msg[0]))
+    var seckey_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&seckey[0]))
+    var nonce_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&nonce[0]))
+    var sig_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&sig[0]))
+
+    if C.secp256k1_ecdsa_seckey_verify(seckey_ptr) != C.int(1) {
+        log.Panic() //invalid seckey
+    }
+
+    ret := secp256k1_ecdsa_sign_compact(
+        msg_ptr, C.int(len(msg))),
+        sig_ptr,
+        seckey_ptr,
+        nonce_ptr,
+        &recid);
+
+    if ret != 1 {
+        return nil //nonce invalid
+    }
+    sig[64] = byte(int(recid))
+
+    return sig
+
 }
 
- /* Verify an ECDSA signature.
- *  Returns: 1: correct signature
- *           0: incorrect signature
- *          -1: invalid public key
- *          -2: invalid signature
- */
+/*
+* Verify an ECDSA secret key.
+*  Returns: 1: secret key is valid
+*           0: secret key is invalid
+*  In:      seckey: pointer to a 32-byte secret key
+*/
+func VerifySeckey(seckey []byte) int {
+    if len(seckey) != 32 {return 0}
+    var seckey_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&seckey[0]))
+    ret := C.secp256k1_ecdsa_seckey_verify(seckey_ptr)
+    return int(ret)
+}
+
+/*
+* Validate a public key.
+*  Returns: 1: valid public key
+*           0: invalid public key
+*/
+
+func VerifyPubkey(pubkey []byte) int {
+    if len(pubkey) != 33 {return 0}
+    var pubkey_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&pubkey[0]))
+    ret := C.secp256k1_ecdsa_pubkey_verify(pubkey_ptr, 33)
+    return int(ret)
+}
+
+
+/*
+int secp256k1_ecdsa_verify(const unsigned char *msg, int msglen,
+                           const unsigned char *sig, int siglen,
+                           const unsigned char *pubkey, int pubkeylen);
+*/
+
+/* Verify an ECDSA signature.
+*  Returns: 1: correct signature
+*           0: incorrect signature
+*          -1: invalid public key
+*          -2: invalid signature
+*/
 func VerifySignature(msg []byte, sig []byte, pubkey []byte ) int {
 
     var msg_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&msg[0]))
