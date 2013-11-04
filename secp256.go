@@ -13,6 +13,8 @@ import (
         "unsafe"
 //    "fmt"
         "rand"
+        "errors"
+        "log"
 )
 //#include "./src/secp256k1.c"
 //removing the "-std=std99" or replacing it with "-std=gnu99"
@@ -179,4 +181,48 @@ func VerifySignature(msg []byte, sig []byte, pubkey []byte ) int {
         pubkey_ptr, C.int(len(pubkey)) );
 
     return int(ret)
+}
+
+/*
+int secp256k1_ecdsa_recover_compact(const unsigned char *msg, int msglen,
+                                    const unsigned char *sig64,
+                                    unsigned char *pubkey, int *pubkeylen,
+                                    int compressed, int recid);
+*/
+
+/*
+ * Recover an ECDSA public key from a compact signature.
+ *  Returns: 1: public key succesfully recovered (which guarantees a correct signature).
+ *           0: otherwise.
+ *  In:      msg:        the message assumed to be signed
+ *           msglen:     the length of the message
+ *           compressed: whether to recover a compressed or uncompressed pubkey
+ *           recid:      the recovery id (as returned by ecdsa_sign_compact)
+ *  Out:     pubkey:     pointer to a 33 or 65 byte array to put the pubkey.
+ *           pubkeylen:  pointer to an int that will contain the pubkey length.
+ */
+
+//recovers the public key from the signature
+func RecoverPubkey(msg []byte, sig []byte) ([]byte {
+    if len(sig) != 65 {log.Panic()}
+
+    var pubkey []byte = make([]byte, 33)
+    var pubkey_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&pubkey[0]))
+
+    var msg_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&msg[0]))
+    var sig_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&sig[0]))
+
+    ret := secp256k1_ecdsa_recover_compact(
+        msg_ptr, C.Int(len(msg)),
+        const unsigned char *sig64,
+        unsigned char *pubkey, int *pubkeylen,
+        int compressed, int recid
+    );
+
+    if ret == 0 {
+        return nil, errors.New()
+    }
+
+
+
 }
