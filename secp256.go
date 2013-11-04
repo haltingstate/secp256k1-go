@@ -12,8 +12,8 @@ import "C"
 import (
         "unsafe"
 //    "fmt"
-        "rand"
-        "errors"
+        "math/rand"
+        //"errors"
         "log"
 )
 //#include "./src/secp256k1.c"
@@ -65,9 +65,6 @@ var lock = make(chan int, 1)
 
 var inited int = 0
 
-func block() {
-    while 0
-}
 //void secp256k1_start(void);
 func init() {
     //takes 10ms to 100ms; do in goroutine thread
@@ -114,9 +111,10 @@ type _not_secure struct {
 
 //completely insecure random number generator
 //use entropy pool etc and cryptographic random number generator
-func (r *_not_secure) RandByte(n int) []byte]) {
+func (r *_not_secure) RandByte(n int) []byte {
     var ret []byte = make([]byte, n)
     offset := 0
+    todo := n
     for {
         val := int64(r.src.Int63())
         for i := 0; i < 8; i++ {
@@ -135,13 +133,14 @@ func (r *_not_secure) RandByte(n int) []byte]) {
 var not_secure _not_secure
 
 /*
-int secp256k1_ecdsa_pubkey_create(unsigned char *pubkey, int *pubkeylen, 
-const unsigned char *seckey, int compressed);
+int secp256k1_ecdsa_pubkey_create(
+    unsigned char *pubkey, int *pubkeylen, 
+    const unsigned char *seckey, int compressed);
 */
 
 //returns pubkey, seckey
 func GenerateKeyPair() ([]byte, []byte) {
-    const pubkey_len = 33
+    pubkey_len := C.int(0)
     const seckey_len = 32
 
     var pubkey []byte = make([]byte, pubkey_len);
@@ -151,10 +150,12 @@ func GenerateKeyPair() ([]byte, []byte) {
     var seckey_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&seckey[0]))
 
     ret := C.secp256k1_ecdsa_pubkey_create(
-        pubkey_ptr, C.int(pubkey_len),
-        seckey_ptr, C.int(seckey_len),
-        1)
+        pubkey_ptr, &pubkey_len,
+        seckey_ptr,1)
 
+    if ret != 1 {
+        return GenerateKeyPair() //invalid secret, try again
+    }
     return pubkey, seckey
 }
 
@@ -203,26 +204,28 @@ int secp256k1_ecdsa_recover_compact(const unsigned char *msg, int msglen,
  */
 
 //recovers the public key from the signature
-func RecoverPubkey(msg []byte, sig []byte) ([]byte {
+func RecoverPubkey(msg []byte, sig []byte) ([]byte) {
     if len(sig) != 65 {log.Panic()}
 
     var pubkey []byte = make([]byte, 33)
-    var pubkey_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&pubkey[0]))
 
     var msg_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&msg[0]))
     var sig_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&sig[0]))
+    var pubkey_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&pubkey[0]))
 
-    ret := secp256k1_ecdsa_recover_compact(
-        msg_ptr, C.Int(len(msg)),
-        const unsigned char *sig64,
-        unsigned char *pubkey, int *pubkeylen,
-        int compressed, int recid
+    var pubkeylen C.int;
+
+    ret := C.secp256k1_ecdsa_recover_compact(
+        msg_ptr, C.int(len(msg)),
+        sig_ptr,
+        pubkey_ptr, &pubkeylen,
+        C.int(1), C.int(sig[64]),
     );
 
-    if ret == 0 {
-        return nil, errors.New()
+    if ret == 0 || int(pubkeylen) != 33 {
+        return nil
     }
 
-
+    return pubkey
 
 }
