@@ -112,7 +112,9 @@ int secp256k1_ecdsa_pubkey_create(
  */
 
 //pubkey, seckey
+
 func GenerateKeyPair() ([]byte, []byte) {
+
     pubkey_len := C.int(33)
     const seckey_len = 32
 
@@ -175,10 +177,11 @@ func Sign(msg []byte, seckey []byte) []byte {
         nonce_ptr,
         &recid);
 
-    if ret != 1 {
-        return nil //nonce invalid
-    }
     sig[64] = byte(int(recid))
+
+    if ret != 1 {
+        return Sign(msg,seckey) //nonce invalid,retry
+    }
 
     return sig
 
