@@ -217,7 +217,7 @@ func VerifyPubkey(pubkey []byte) int {
 //for compressed signatures, does not need pubkey
 func VerifySignature(msg []byte, sig []byte ) int {
     pubkey := RecoverPubkey(msg, sig) //if pubkey recovered, signature valid
-    if pubkey != nil { return 1}
+    if pubkey != nil { return 1 }
     return 0
 }
 

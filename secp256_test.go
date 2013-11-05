@@ -24,6 +24,16 @@ func Test_Secp256_01(t *testing.T) {
 	if VerifyPubkey(pubkey) != 1 { t.Fatal()}
 }
 
+//test size of messages
+func Test_Secp256_02s(t *testing.T) { 
+	pubkey,seckey := GenerateKeyPair()
+	msg := RandByte(32)
+	sig := Sign(msg, seckey)
+	if len(pubkey) != 33 {t.Fail()}
+	if lent(seckey) != 32 {t.Fail()}
+	if len(sig) != 32 {t.Fail()}
+}
+
 //test signing message
 func Test_Secp256_02(t *testing.T) { 
 	_,seckey := GenerateKeyPair()
