@@ -57,16 +57,20 @@ func Test_Secp256_04(t *testing.T) {
 }
 
 //test random signatures that should fail
+
+//crashes
 func Test_Secp256_05(t *testing.T) { 
 	_,seckey := GenerateKeyPair()
 	msg := RandByte(32)
 	sig := Sign(msg, seckey)
 	for i:=0; i<TESTS; i++ {
-		sig = RandByte(SigSize)
+		sig = RandByte(len(sig))
+		//sig[len(sig)-1] %= 4
 		ret := VerifySignature(msg, sig)
 		if ret == 1 { t.Fail()}
 	}
 }
+
 
 //test random messages that should fail
 func Test_Secp256_06(t *testing.T) { 
