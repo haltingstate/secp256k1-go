@@ -12,7 +12,6 @@ import "C"
 import (
         "unsafe"
 //    "fmt"
-        "math/rand"
         //"errors"
         "log"
 )
@@ -95,33 +94,6 @@ func Stop() {
 
 */
 
-type _not_secure struct {
-    src rand.Source
-}
-
-//completely insecure random number generator
-//use entropy pool etc and cryptographic random number generator
-func (r *_not_secure) RandByte(n int) []byte {
-    var ret []byte = make([]byte, n)
-    offset := 0
-    todo := n
-    for {
-        val := int64(r.src.Int63())
-        for i := 0; i < 8; i++ {
-            ret[offset] = byte(val & 0xff)
-            todo--
-            if todo == 0 {
-                return ret
-            }
-            offset++
-            val >>= 8
-        }
-    }
-    return nil //unreachable
-}
-
-var not_secure _not_secure
-
 /*
 int secp256k1_ecdsa_pubkey_create(
     unsigned char *pubkey, int *pubkeylen, 
@@ -139,12 +111,13 @@ int secp256k1_ecdsa_pubkey_create(
  *           0: secret was invalid, try again.
  */
 
+//pubkey, seckey
 func GenerateKeyPair() ([]byte, []byte) {
     pubkey_len := C.int(0)
     const seckey_len = 32
 
     var pubkey []byte = make([]byte, pubkey_len);
-    var seckey []byte = not_secure.RandByte(seckey_len) //going to get bitcoins stolen!
+    var seckey []byte = RandByte(seckey_len) //going to get bitcoins stolen!
 
     var pubkey_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&pubkey[0]))
     var seckey_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&seckey[0]))
@@ -181,7 +154,7 @@ int secp256k1_ecdsa_sign_compact(const unsigned char *msg, int msglen,
 */
 
 func Sign(msg []byte, seckey []byte) []byte {
-    var nonce []byte = not_secure.RandByte(32) //going to get bitcoins stolen!
+    var nonce []byte = RandByte(32) //going to get bitcoins stolen!
 
     var sig []byte = make([]byte,65)
     var recid C.int;
