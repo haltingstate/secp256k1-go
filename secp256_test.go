@@ -31,20 +31,8 @@ func Test_Secp1(t *testing.T) {
 
 func Test_Secp2(t *testing.T) { 
 	pubkey,seckey := GenerateKeyPair()
-
-	if VerifyPubkey(pubkey) != 1 { t.Fatal()}
-	if VerifySeckey(seckey) != 1 { t.Fatal()}
-
 	msg := RandByte(32)
-
 	sig := Sign(msg, seckey)
-
 	ret := VerifySignature(msg, sig) //does not need pubkey for compact signatures
-
-
-	if ret != 1 { 
-		fmt.Printf("VerifySignature: ret= %v \n", ret)
-		t.Fatal()
-	}
-
+	if ret != 1 {  t.Fatal("Signature invalid") }
 }
