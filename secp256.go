@@ -55,24 +55,10 @@ import (
 can verify client/server match without sending password over network
 */
 
-var lock = make(chan int, 1)
-
-//var g_k *C.struct_EC_KEY;
-
-//func unlock() {
-//    lock <- 1
-//}
-
-var inited int = 0
 
 //void secp256k1_start(void);
 func init() {
-    //takes 10ms to 100ms; do in goroutine thread
-    go func() {
-        C.secp256k1_start()
-        //lock <- 1
-        inited = 1 
-    }()
+    C.secp256k1_start()     //takes 10ms to 100ms
 }
 
 // void secp256k1_stop(void);
@@ -102,6 +88,10 @@ func Stop() {
 <sipa> a private key is a NUMBER
 <sipa> a public key is a POINT
 <gmaxwell> half the x,y values in the field are not on the curve, a private key is an integer.
+
+<sipa> HaltingState: yes, n,q = private keys; N,Q = corresponding public keys (N=n*G, Q=q*G); then it follows that n*Q = n*q*G = q*n*G = q*N
+<sipa> that's the reason ECDH works
+<sipa> multiplication is associative and commutativ
 
 */
 
