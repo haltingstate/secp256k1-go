@@ -113,7 +113,7 @@ int secp256k1_ecdsa_pubkey_create(
 
 //pubkey, seckey
 func GenerateKeyPair() ([]byte, []byte) {
-    pubkey_len := C.int(0)
+    pubkey_len := C.int(33)
     const seckey_len = 32
 
     var pubkey []byte = make([]byte, pubkey_len);
