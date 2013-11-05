@@ -2,7 +2,7 @@ package secp256
 
 import (
 	"testing"
-	"fmt"
+	//"fmt"
 )
 
 
