@@ -5,6 +5,9 @@ import (
 	//"fmt"
 )
 
+const TESTS   = 10000 // how many tests
+const SigSize = 65 //64+1
+
 
 func Test_Secp256_00(t *testing.T) {
 
@@ -21,17 +24,58 @@ func Test_Secp256_01(t *testing.T) {
 	if VerifyPubkey(pubkey) != 1 { t.Fatal()}
 }
 
-/* Verify an ECDSA signature.
-*  Returns: 1: correct signature
-*           0: incorrect signature
-*          -1: invalid public key
-*          -2: invalid signature
-*/
-
-func Test_Secp256_00(t *testing.T) { 
-	pubkey,seckey := GenerateKeyPair()
+//test signing message
+func Test_Secp256_02(t *testing.T) { 
+	_,seckey := GenerateKeyPair()
 	msg := RandByte(32)
 	sig := Sign(msg, seckey)
 	ret := VerifySignature(msg, sig)
 	if ret != 1 {  t.Fatal("Signature invalid") }
+}
+
+
+//test random messages for the same pub/private key
+func Test_Secp256_03(t *testing.T) { 
+	_,seckey := GenerateKeyPair()
+	for i:=0; i<TESTS; i++ {
+		msg := RandByte(32)
+		sig := Sign(msg, seckey)
+		ret := VerifySignature(msg, sig)
+		if ret != 1 {  t.Fail() }
+	}
+}
+
+//test random messages for different pub/private keys
+func Test_Secp256_04(t *testing.T) { 
+	for i:=0; i<TESTS; i++ {
+		_,seckey := GenerateKeyPair()
+		msg := RandByte(32)
+		sig := Sign(msg, seckey)
+		ret := VerifySignature(msg, sig)
+		if ret != 1 {  t.Fail() }
+	}
+}
+
+//test random signatures that should fail
+func Test_Secp256_05(t *testing.T) { 
+	_,seckey := GenerateKeyPair()
+	msg := RandByte(32)
+	sig := Sign(msg, seckey)
+	for i:=0; i<TESTS; i++ {
+		sig = RandByte(SigSize)
+		ret := VerifySignature(msg, sig)
+		if ret == 1 { t.Fail()}
+	}
+}
+
+//test random messages that should fail
+func Test_Secp256_06(t *testing.T) { 
+	_,seckey := GenerateKeyPair()
+	msg := RandByte(32)
+	sig := Sign(msg, seckey)
+	for i:=0; i<TESTS; i++ {
+		msg = RandByte(32)
+		ret := VerifySignature(msg, sig)
+		if ret == 1 { t.Fail()}
+	}
 }
