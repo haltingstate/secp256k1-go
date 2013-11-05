@@ -214,30 +214,11 @@ func VerifyPubkey(pubkey []byte) int {
 }
 
 
-/*
-int secp256k1_ecdsa_verify(const unsigned char *msg, int msglen,
-                           const unsigned char *sig, int siglen,
-                           const unsigned char *pubkey, int pubkeylen);
-*/
-
-/* Verify an ECDSA signature.
-*  Returns: 1: correct signature
-*           0: incorrect signature
-*          -1: invalid public key
-*          -2: invalid signature
-*/
-func VerifySignature(msg []byte, sig []byte, pubkey []byte ) int {
-
-    var msg_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&msg[0]))
-    var sig_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&sig[0]))
-    var pubkey_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&pubkey[0]))
-
-    ret := C.secp256k1_ecdsa_verify(
-        msg_ptr, C.int(len(msg)),
-        sig_ptr, C.int(len(sig)),
-        pubkey_ptr, C.int(len(pubkey)) );
-
-    return int(ret)
+//for compressed signatures, does not need pubkey
+func VerifySignature(msg []byte, sig []byte ) int {
+    pubkey := RecoverPubkey(msg, sig) //if pubkey recovered, signature valid
+    if pubkey != nil { return 1}
+    return 0
 }
 
 /*
@@ -260,6 +241,7 @@ int secp256k1_ecdsa_recover_compact(const unsigned char *msg, int msglen,
  */
 
 //recovers the public key from the signature
+//recovery of pubkey means correct signature
 func RecoverPubkey(msg []byte, sig []byte) ([]byte) {
     if len(sig) != 65 {log.Panic()}
 
@@ -285,3 +267,30 @@ func RecoverPubkey(msg []byte, sig []byte) ([]byte) {
     return pubkey
 
 }
+
+
+/* Verify an ECDSA signature.
+*  Returns: 1: correct signature
+*           0: incorrect signature
+*          -1: invalid public key
+*          -2: invalid signature
+*/
+/*
+for non-compressed
+func VerifySignature(msg []byte, sig []byte, pubkey []byte ) int {
+
+    if len(sig) != 72 || len(pubkey) != 65
+
+    var msg_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&msg[0]))
+    var sig_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&sig[0]))
+    var pubkey_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&pubkey[0]))
+
+    ret := C.secp256k1_ecdsa_verify(
+        msg_ptr, C.int(len(msg)),
+        sig_ptr, C.int(len(sig)),
+        pubkey_ptr, C.int(len(pubkey)) );
+
+    return int(ret)
+
+}
+*/
