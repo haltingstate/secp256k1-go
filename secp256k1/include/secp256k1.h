@@ -58,11 +58,14 @@ int secp256k1_ecdsa_sign_compact(const unsigned char *msg, int msglen,
                                  const unsigned char *nonce,
                                  int *recid);
 
-/** Recover an ECDSA public key from a compact signature.
- *  Returns: 1: public key succesfully recovered (which guarantees a correct signature).
+/** Recover an ECDSA public key from a compact signature.  If successful, guarentees 
+correct signature for recovered public key. Check the recovered public key against public key
+to verify signature.
+ *  Returns: 1: public key succesfully recovered
  *           0: otherwise.
  *  In:      msg:        the message assumed to be signed
  *           msglen:     the length of the message
+ *           sig64:      signature as 64 byte array
  *           compressed: whether to recover a compressed or uncompressed pubkey
  *           recid:      the recovery id (as returned by ecdsa_sign_compact)
  *  Out:     pubkey:     pointer to a 33 or 65 byte array to put the pubkey.

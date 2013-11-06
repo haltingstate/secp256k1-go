@@ -32,6 +32,9 @@ bench: $(FILES) src/bench.c $(OBJS)
 tests: $(FILES) src/tests.c $(OBJS)
 	$(CC) -std=$(STD) $(CFLAGS) $(CFLAGS_EXTRA) $(CFLAGS_TEST_EXTRA) -DVERIFY -fstack-protector-all -$(OPTLEVEL) -ggdb3 src/tests.c $(OBJS) $(LDFLAGS_EXTRA) $(LDFLAGS_TEST_EXTRA) -o tests
 
+tests_fuzzer: $(FILES) src/tests_fuzzer.c obj/secp256k1.o $(OBJS)
+	$(CC) -std=$(STD) $(CFLAGS) $(CFLAGS_EXTRA) $(CFLAGS_TEST_EXTRA) -DVERIFY -fstack-protector-all -$(OPTLEVEL) -ggdb3 src/tests_fuzzer.c $(OBJS) obj/secp256k1.o $(LDFLAGS_EXTRA) $(LDFLAGS_TEST_EXTRA) -o tests_fuzzer
+	
 coverage: $(FILES) src/tests.c $(OBJS)
 	rm -rf tests.gcno tests.gcda tests_cov
 	$(CC) -std=$(STD) $(CFLAGS) $(CFLAGS_EXTRA) $(CFLAGS_TEST_EXTRA) -DVERIFY --coverage -$(OPTLEVEL) -g src/tests.c $(OBJS) $(LDFLAGS_EXTRA) $(LDFLAGS_TEST_EXTRA) -o tests_cov
