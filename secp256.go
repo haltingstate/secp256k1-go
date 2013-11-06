@@ -2,7 +2,7 @@ package secp256
 /*
 #cgo CFLAGS: -std=gnu99 -Wno-error
 #cgo LDFLAGS: -lgmp
-#define USE_FIELD_5X64
+#define USE_FIELD_10X26
 #define USE_NUM_GMP
 #define USE_FIELD_INV_BUILTIN
 #include "./secp256k1/src/secp256k1.c"
@@ -18,8 +18,9 @@ import (
 //#include "./src/secp256k1.c"
 //removing the "-std=std99" or replacing it with "-std=gnu99"
 //#cgo LDFLAGS: -L. -L./lib -L../../../lib -Wl,-rpath='./lib/' -lsecp256k1 -lgmp
-
 //#include "./include/secp256k1.h"
+
+//#define USE_FIELD_5X64
 
 /*
 #cgo CFLAGS: -std=gnu99 -Wno-error
@@ -215,9 +216,13 @@ func VerifyPubkey(pubkey []byte) int {
 
 
 //for compressed signatures, does not need pubkey
-func VerifySignature(msg []byte, sig []byte ) int {
-    pubkey := RecoverPubkey(msg, sig) //if pubkey recovered, signature valid
+func VerifySignature(msg []byte, sig []byte, pubkey1 []byte) int {
+    pubkey2 := RecoverPubkey(msg, sig) //if pubkey recovered, signature valid
+    
+    if len(pubkey1) != 65 || len(pubkey2) != 65 { return 0;}
+    for i:=0; i<65; i++ { if(pubkey1[i] != pubkey2[i]) {return 0;}}
     if pubkey != nil { return 1 }
+
     return 0
 }
 
