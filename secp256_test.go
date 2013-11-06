@@ -68,6 +68,7 @@ func Test_Secp256_03(t *testing.T) {
 	for i:=0; i<TESTS; i++ {
 		msg := RandByte(32)
 		sig := Sign(msg, seckey)
+		sig[len(sig)-1] %= 4
 		pubkey2 := RecoverPubkey(msg, sig)
 		if pubkey2 == nil {  t.Fail() }
 	}
@@ -79,6 +80,7 @@ func Test_Secp256_04(t *testing.T) {
 		_,seckey := GenerateKeyPair()
 		msg := RandByte(32)
 		sig := Sign(msg, seckey)
+		sig[len(sig)-1] %= 4
 		pubkey2 := RecoverPubkey(msg, sig)
 		if pubkey2 == nil {  t.Fail() }
 	}
@@ -96,7 +98,7 @@ func Test_Secp256_06a(t *testing.T) {
 	sig := Sign(msg, seckey)
 	for i:=0; i<TESTS; i++ {
 		sig = RandByte(len(sig))
-		//sig[len(sig)-1] %= 4
+		sig[len(sig)-1] %= 4
 		pubkey2 := RecoverPubkey(msg, sig)
 		if pubkey2 != nil {  t.Fail() }
 	}
