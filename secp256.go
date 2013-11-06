@@ -218,11 +218,10 @@ func VerifyPubkey(pubkey []byte) int {
 //for compressed signatures, does not need pubkey
 func VerifySignature(msg []byte, sig []byte, pubkey1 []byte) int {
     pubkey2 := RecoverPubkey(msg, sig) //if pubkey recovered, signature valid
-    
-    if len(pubkey1) != 65 || len(pubkey2) != 65 { return 0;}
-    for i:=0; i<65; i++ { if(pubkey1[i] != pubkey2[i]) {return 0;}}
-    if pubkey != nil { return 1 }
 
+    if len(pubkey1) != 33 || len(pubkey2) != 33 { return 0;}
+    for i:=0; i<33; i++ { if(pubkey1[i] != pubkey2[i]) {return 0;}}
+    if pubkey2 != nil { return 1 }
     return 0
 }
 
