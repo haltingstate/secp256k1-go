@@ -433,7 +433,6 @@ void run_ecdsa_openssl() {
 #endif
 
 int main(int argc, char **argv) {
-	
     if (argc > 1)
         count = strtol(argv[1], NULL, 0)*47;
 
