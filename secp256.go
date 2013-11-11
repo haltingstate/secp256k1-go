@@ -231,6 +231,14 @@ func VerifySignature(msg []byte, sig []byte, pubkey1 []byte) int {
 		log.Panic("invalid pubkey length")
 	}
 
+	//to enforce malleability, highest bit of S must be 0
+	//S starts at 32nd byte
+
+	var b int = int(sig[32])
+	if (b & 0x80) == 0x80 {
+		return 0 //valid signature, but fails malleability
+	}
+
 	pubkey2 := RecoverPubkey(msg, sig) //if pubkey recovered, signature valid
 
 	if pubkey2 == nil {

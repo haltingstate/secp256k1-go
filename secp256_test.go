@@ -3,6 +3,7 @@ package secp256
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"testing"
 )
 
@@ -17,6 +18,22 @@ func Test_Secp256_00(t *testing.T) {
 		t.Fatal()
 	}
 
+}
+
+//tests for Malleability
+//highest bit of S must be 0; 32nd byte
+func CompactSigTest(sig []byte) {
+
+	var b int = int(sig[32])
+	if b < 0 {
+		log.Panic()
+	}
+	if ((b >> 7) == 1) != ((b & 0x80) == 0x80) {
+		log.Panic("b= %v b2= %v \n", b, b>>7)
+	}
+	if (b & 0x80) == 0x80 {
+		log.Panic("b= %v b2= %v \n", b, b&0x80)
+	}
 }
 
 //test pubkey/private generation
@@ -35,6 +52,7 @@ func Test_Secp256_02s(t *testing.T) {
 	pubkey, seckey := GenerateKeyPair()
 	msg := RandByte(32)
 	sig := Sign(msg, seckey)
+	CompactSigTest(sig)
 	if sig == nil {
 		t.Fatal("Signature nil")
 	}
@@ -109,6 +127,8 @@ func Test_Secp256_03(t *testing.T) {
 	for i := 0; i < TESTS; i++ {
 		msg := RandByte(32)
 		sig := Sign(msg, seckey)
+		CompactSigTest(sig)
+
 		sig[len(sig)-1] %= 4
 		pubkey2 := RecoverPubkey(msg, sig)
 		if pubkey2 == nil {
@@ -123,6 +143,8 @@ func Test_Secp256_04(t *testing.T) {
 		pubkey1, seckey := GenerateKeyPair()
 		msg := RandByte(32)
 		sig := Sign(msg, seckey)
+		CompactSigTest(sig)
+
 		if sig[len(sig)-1] >= 4 {
 			t.Fail()
 		}
