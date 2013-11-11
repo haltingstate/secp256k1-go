@@ -163,6 +163,13 @@ func Test_Secp256_04(t *testing.T) {
 //crashes:
 //	-SIPA look at this
 
+func randSig() []byte {
+	sig := RandByte(65)
+	sig[32] &= 0x70
+	sig[64] %= 4
+	return sig
+}
+
 func Test_Secp256_06a_alt0(t *testing.T) {
 	pubkey1, seckey := GenerateKeyPair()
 	msg := RandByte(32)
@@ -175,8 +182,7 @@ func Test_Secp256_06a_alt0(t *testing.T) {
 		t.Fail()
 	}
 	for i := 0; i < TESTS; i++ {
-		sig = RandByte(65)
-		sig[64] %= 4
+		sig = randSig()
 		pubkey2 := RecoverPubkey(msg, sig)
 
 		if bytes.Equal(pubkey1, pubkey2) == true {
@@ -186,26 +192,7 @@ func Test_Secp256_06a_alt0(t *testing.T) {
 		if pubkey2 != nil && VerifySignature(msg, sig, pubkey2) != 1 {
 			t.Fail()
 		}
-		if VerifySignature(msg, sig, pubkey1) == 1 {
-			t.Fail()
-		}
-	}
-}
 
-func Test_Secp256_06a_alt1(t *testing.T) {
-	pubkey1, seckey := GenerateKeyPair()
-	msg := RandByte(32)
-	sig := Sign(msg, seckey)
-	for i := 0; i < TESTS; i++ {
-		sig = RandByte(65)
-		pubkey2 := RecoverPubkey(msg, sig)
-		if bytes.Equal(pubkey1, pubkey2) == true {
-			t.Fail()
-		}
-
-		if pubkey2 != nil && VerifySignature(msg, sig, pubkey2) != 1 {
-			t.Fail()
-		}
 		if VerifySignature(msg, sig, pubkey1) == 1 {
 			t.Fail()
 		}
@@ -230,6 +217,7 @@ func Test_Secp256_06b(t *testing.T) {
 		if pubkey2 != nil && VerifySignature(msg, sig, pubkey2) != 1 {
 			t.Fail()
 		}
+
 		if VerifySignature(msg, sig, pubkey1) == 1 {
 			t.Fail()
 		}

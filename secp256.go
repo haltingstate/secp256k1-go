@@ -239,6 +239,10 @@ func VerifySignature(msg []byte, sig []byte, pubkey1 []byte) int {
 		return 0 //valid signature, but fails malleability
 	}
 
+	if sig[64] >= 4 {
+		return 0 //recover byte invalid
+	}
+
 	pubkey2 := RecoverPubkey(msg, sig) //if pubkey recovered, signature valid
 
 	if pubkey2 == nil {
