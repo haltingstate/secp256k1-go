@@ -18,8 +18,7 @@ import (
 	"log"
 )
 
-
-#define USE_FIELD_5X64
+//#define USE_FIELD_5X64
 
 /*
    Todo:
@@ -35,7 +34,6 @@ import (
    > Store keys in wallets
    > use slow key derivation function for wallet encryption key (2 seconds)
 */
-
 
 func init() {
 	C.secp256k1_start() //takes 10ms to 100ms
