@@ -1,19 +1,31 @@
 package secp256
 
 /*
-   Todo:
-   > Centralize key management in module
-   > add pubkey/private key struct
-   > Dont let keys leave module; address keys as ints
+<HaltingState> sipa, int secp256k1_ecdsa_pubkey_create(unsigned char *pubkey, int *pubkeylen, const unsigned char *seckey, int compressed);
+<HaltingState> is that how i generate private/public keys?
+<sipa> HaltingState: you pass in a random 32-byte string as seckey
+<sipa> HaltingState: if it is valid, the corresponding pubkey is put in pubkey
+<sipa> and true is returned
+<sipa> otherwise, false is returned
+<sipa> around 1 in 2^128 32-byte strings are invalid, so the odds of even ever seeing one is extremely rare
 
-   > store private keys in buffer and shuffle (deters persistance on swap disc)
-   > Byte permutation (changing)
-   > xor with chaning random block (to deter scanning memory for 0x63) (stream cipher?)
-   > randomize buffer size to between 16 MB and 32MB and multiple of 4096 bytes
+<sipa> private keys are mathematically numbers
+<sipa> each has a corresponding point on the curve as public key
+<sipa> a private key is just a number
+<sipa> a public key is a point with x/y coordinates
+<sipa> almost every 256-bit number is a valid private key (one with a point on the curve corresponding to it)
+<sipa> HaltingState: ok?
 
-   On Disk
-   > Store keys in wallets
-   > use slow key derivation function for wallet encryption key (2 seconds)
+<sipa> more than half of random points are not on the curve
+<sipa> and actually, it is less than  the square root, not less than half, sorry :)
+!!!
+<sipa> a private key is a NUMBER
+<sipa> a public key is a POINT
+<gmaxwell> half the x,y values in the field are not on the curve, a private key is an integer.
+
+<sipa> HaltingState: yes, n,q = private keys; N,Q = corresponding public keys (N=n*G, Q=q*G); then it follows that n*Q = n*q*G = q*n*G = q*N
+<sipa> that's the reason ECDH works
+<sipa> multiplication is associative and commutativ
 */
 
 /*
@@ -44,6 +56,14 @@ package secp256
 <sipa> so the 32nd byte
 <HaltingState> wtf
 
+*/
+
+/*
+ For instance, nonces are used in HTTP digest access authentication to calculate an MD5 digest
+ of the password. The nonces are different each time the 401 authentication challenge
+ response code is presented, thus making replay attacks virtually impossible.
+
+can verify client/server match without sending password over network
 */
 
 /*
