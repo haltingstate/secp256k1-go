@@ -1,4 +1,4 @@
-package secp256k1
+package secp256
 
 /*
 <HaltingState> sipa, int secp256k1_ecdsa_pubkey_create(unsigned char *pubkey, int *pubkeylen, const unsigned char *seckey, int compressed);
