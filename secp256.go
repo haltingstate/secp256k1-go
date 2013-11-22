@@ -1,4 +1,4 @@
-package secp256
+package secp256k1
 
 /*
 #cgo CFLAGS: -std=gnu99 -Wno-error
@@ -142,7 +142,7 @@ func Sign(msg []byte, seckey []byte) []byte {
 *  In:      seckey: pointer to a 32-byte secret key
  */
 
-func VerifySeckey(seckey []byte) int {
+func VerifySeckeyValidity(seckey []byte) int {
 	if len(seckey) != 32 {
 		return 0
 	}
@@ -157,7 +157,7 @@ func VerifySeckey(seckey []byte) int {
 *           0: invalid public key
  */
 
-func VerifyPubkey(pubkey []byte) int {
+func VerifyPubkeyValidity(pubkey []byte) int {
 	if len(pubkey) != 33 {
 		return 0
 	}
@@ -166,7 +166,7 @@ func VerifyPubkey(pubkey []byte) int {
 	return int(ret)
 }
 
-func VerifySignature(sig []byte) int {
+func VerifySignatureValidity(sig []byte) int {
 	//64+1
 	if len(sig) != 65 {
 		return 0
