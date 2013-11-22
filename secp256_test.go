@@ -39,10 +39,10 @@ func CompactSigTest(sig []byte) {
 //test pubkey/private generation
 func Test_Secp256_01(t *testing.T) {
 	pubkey, seckey := GenerateKeyPair()
-	if VerifySeckey(seckey) != 1 {
+	if VerifySeckeyValidity(seckey) != 1 {
 		t.Fatal()
 	}
-	if VerifyPubkey(pubkey) != 1 {
+	if VerifyPubkeyValidity(pubkey) != 1 {
 		t.Fatal()
 	}
 }
