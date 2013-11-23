@@ -66,7 +66,7 @@ func GenerateKeyPair() ([]byte, []byte) {
 	const seckey_len = 32
 
 	var pubkey []byte = make([]byte, pubkey_len)
-	var seckey []byte = RandByte(seckey_len) //going to get bitcoins stolen!
+	var seckey []byte = RandByte(seckey_len)
 
 	var pubkey_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&pubkey[0]))
 	var seckey_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&seckey[0]))
@@ -102,7 +102,7 @@ int secp256k1_ecdsa_sign_compact(const unsigned char *msg, int msglen,
 */
 
 func Sign(msg []byte, seckey []byte) ([]byte, error) {
-	var nonce []byte = RandByte(32) //going to get bitcoins stolen!
+	var nonce []byte = RandByte(32)
 
 	var sig []byte = make([]byte, 65)
 	var recid C.int
@@ -170,8 +170,8 @@ func VerifySignatureValidity(sig []byte) int {
 	if len(sig) != 65 {
 		return 0
 	}
-	//malleability check
-	if (sig[32] & 0x70) != sig[32] {
+	//malleability check, highest bit must be 1
+	if (sig[32] & 0x80) == 0x80 {
 		return 0
 	}
 	//recovery id check
@@ -195,8 +195,7 @@ func VerifySignature(msg []byte, sig []byte, pubkey1 []byte) error {
 
 	//to enforce malleability, highest bit of S must be 0
 	//S starts at 32nd byte
-	var b int = int(sig[32])
-	if (b & 0x80) == 0x80 {
+	if (sig[32] & 0x80) == 0x80 { //highest bit must be 1
 		return errors.New("Signature not malleable")
 	}
 
