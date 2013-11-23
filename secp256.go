@@ -172,7 +172,7 @@ func VerifySignatureValidity(sig []byte) int {
 		return 0
 	}
 	//malleability check, highest bit must be 1
-	if (sig[32] & 0x70) != sig[32] {
+	if (sig[32] & 0x80) == 0x80 {
 		return 0
 	}
 	//recovery id check
