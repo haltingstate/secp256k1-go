@@ -262,9 +262,9 @@ func RecoverPubkey(msg []byte, sig []byte) ([]byte, error) {
 
 	if ret == C.int(0) {
 		return nil, errors.New("Failed to recover public key")
-	}
-	if int(pubkeylen) != 33 {
+	} else if pubkeylen != C.int(33) {
 		return nil, errors.New("Invalid recovered public key length")
+	} else {
+		return pubkey, nil
 	}
-	return pubkey, nil
 }

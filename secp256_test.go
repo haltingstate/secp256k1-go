@@ -208,6 +208,9 @@ func randSig() []byte {
 func Test_Secp256_06a_alt0(t *testing.T) {
 	pubkey1, seckey := GenerateKeyPair()
 	msg := RandByte(32)
+	if msg == nil {
+		t.Fatal("No message generated")
+	}
 	sig, err := Sign(msg, seckey)
 	if err != nil {
 		t.Fatal(err.Error())
@@ -219,28 +222,33 @@ func Test_Secp256_06a_alt0(t *testing.T) {
 		t.Fatal()
 	}
 
+	fail_count := 0
 	for i := 0; i < TESTS; i++ {
 		sig = randSig()
-		pubkey2, err := RecoverPubkey(msg, sig)
-		if err == nil {
-			t.Fail()
-			continue
-		}
+		pubkey2, _ := RecoverPubkey(msg, sig)
 
 		if bytes.Equal(pubkey1, pubkey2) {
 			t.Fail()
+			fail_count += 1
 			continue
 		}
 
-		if VerifySignature(msg, sig, pubkey2) == nil {
+		if pubkey2 != nil && VerifySignature(msg, sig, pubkey2) != nil {
 			t.Fail()
+			fail_count += 1
 			continue
 		}
 
-		if VerifySignature(msg, sig, pubkey1) != nil {
+		if VerifySignature(msg, sig, pubkey1) == nil {
 			t.Fail()
+			fail_count += 1
 			continue
 		}
+	}
+	if fail_count != 0 {
+		t.Logf("ERROR: Accepted signature for %v of %v random messages\n",
+			fail_count, TESTS)
+		t.Fail()
 	}
 }
 
@@ -249,6 +257,9 @@ func Test_Secp256_06a_alt0(t *testing.T) {
 func Test_Secp256_06b(t *testing.T) {
 	pubkey1, seckey := GenerateKeyPair()
 	msg := RandByte(32)
+	if msg == nil {
+		t.Fatal("No message generated")
+	}
 	sig, err := Sign(msg, seckey)
 	if err != nil {
 		t.Fatal(err.Error())
@@ -258,28 +269,23 @@ func Test_Secp256_06b(t *testing.T) {
 	for i := 0; i < TESTS; i++ {
 		msg = RandByte(32)
 		pubkey2, err := RecoverPubkey(msg, sig)
-		if err == nil {
-			t.Logf("Recovered key without error")
+		if err != nil {
 			t.Fail()
-			fail_count += 1
 			continue
 		}
 		if bytes.Equal(pubkey1, pubkey2) {
-			t.Logf("Bytes equal")
 			t.Fail()
 			fail_count += 1
 			continue
 		}
 
-		if VerifySignature(msg, sig, pubkey2) == nil {
-			t.Logf("Verified invalid pubkey sig without error")
+		if pubkey2 != nil && VerifySignature(msg, sig, pubkey2) != nil {
 			t.Fail()
 			fail_count += 1
 			continue
 		}
 
-		if VerifySignature(msg, sig, pubkey1) != nil {
-			t.Logf("Failed to verify valid pubkey sig")
+		if VerifySignature(msg, sig, pubkey1) == nil {
 			t.Fail()
 			fail_count += 1
 			continue
