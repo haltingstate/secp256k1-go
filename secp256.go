@@ -13,6 +13,7 @@ import "C"
 import (
 	"bytes"
 	"errors"
+	"log"
 	"unsafe"
 )
 
@@ -143,7 +144,7 @@ func Sign(msg []byte, seckey []byte) ([]byte, error) {
 
 func VerifySeckeyValidity(seckey []byte) int {
 	if len(seckey) != 32 {
-		return 0
+		log.Panic()
 	}
 	var seckey_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&seckey[0]))
 	ret := C.secp256k1_ecdsa_seckey_verify(seckey_ptr)
@@ -158,7 +159,7 @@ func VerifySeckeyValidity(seckey []byte) int {
 
 func VerifyPubkeyValidity(pubkey []byte) int {
 	if len(pubkey) != 33 {
-		return 0
+		log.Panic()
 	}
 	var pubkey_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&pubkey[0]))
 	ret := C.secp256k1_ecdsa_pubkey_verify(pubkey_ptr, 33)
@@ -184,13 +185,13 @@ func VerifySignatureValidity(sig []byte) int {
 //for compressed signatures, does not need pubkey
 func VerifySignature(msg []byte, sig []byte, pubkey1 []byte) error {
 	if msg == nil || sig == nil || pubkey1 == nil {
-		return errors.New("Inputs must be non-nil")
+		log.Panic("Inputs must be non-nil")
 	}
 	if len(sig) != 65 {
-		return errors.New("Invalid signature length")
+		log.Panic("Invalid signature length")
 	}
 	if len(pubkey1) != 33 {
-		return errors.New("Invalid public key length")
+		log.Panic("Invalid public key length")
 	}
 
 	//to enforce malleability, highest bit of S must be 0
@@ -209,7 +210,7 @@ func VerifySignature(msg []byte, sig []byte, pubkey1 []byte) error {
 		return err
 	}
 	if len(pubkey2) != 33 {
-		return errors.New("Invalid recovered public key length")
+		log.Panic("Invalid recovered public key length")
 	}
 	if !bytes.Equal(pubkey1, pubkey2) {
 		return errors.New("Public key does not match recovered public key")
@@ -241,7 +242,7 @@ int secp256k1_ecdsa_recover_compact(const unsigned char *msg, int msglen,
 //recovery of pubkey means correct signature
 func RecoverPubkey(msg []byte, sig []byte) ([]byte, error) {
 	if len(sig) != 65 {
-		return nil, errors.New("Invalid signature length")
+		log.Panic("Invalid signature length")
 	}
 
 	var pubkey []byte = make([]byte, 33)
@@ -262,6 +263,7 @@ func RecoverPubkey(msg []byte, sig []byte) ([]byte, error) {
 	if ret == C.int(0) {
 		return nil, errors.New("Failed to recover public key")
 	} else if pubkeylen != C.int(33) {
+		log.Panic()
 		return nil, errors.New("Invalid recovered public key length")
 	} else {
 		return pubkey, nil
