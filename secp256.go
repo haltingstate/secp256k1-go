@@ -183,7 +183,7 @@ func VerifySignatureValidity(sig []byte) int {
 }
 
 //for compressed signatures, does not need pubkey
-func VerifySignature(msg []byte, sig []byte, pubkey1 []byte) int, error {
+func VerifySignature(msg []byte, sig []byte, pubkey1 []byte) error {
 	if msg == nil || sig == nil || pubkey1 == nil {
 		log.Panic("Inputs must be non-nil")
 	}
@@ -197,11 +197,11 @@ func VerifySignature(msg []byte, sig []byte, pubkey1 []byte) int, error {
 	//to enforce malleability, highest bit of S must be 0
 	//S starts at 32nd byte
 	if (sig[32] & 0x80) == 0x80 { //highest bit must be 1
-		return 0,errors.New("Signature not malleable")
+		return errors.New("Signature not malleable")
 	}
 
 	if sig[64] >= 4 {
-		return 0,errors.New("Recover byte invalid")
+		return errors.New("Recover byte invalid")
 	}
 
 	// if pubkey recovered, signature valid
@@ -213,10 +213,10 @@ func VerifySignature(msg []byte, sig []byte, pubkey1 []byte) int, error {
 		log.Panic("Invalid recovered public key length")
 	}
 	if !bytes.Equal(pubkey1, pubkey2) {
-		return 0,errors.New("Public key does not match recovered public key")
+		return errors.New("Public key does not match recovered public key")
 	}
 
-	return 1,nil
+	return nil
 }
 
 /*
