@@ -51,7 +51,7 @@ func Test_Secp256_01(t *testing.T) {
 func Test_Secp256_02s(t *testing.T) {
 	pubkey, seckey := GenerateKeyPair()
 	msg := RandByte(32)
-	sig := Sign(msg, seckey)
+	sig, _ := Sign(msg, seckey)
 	CompactSigTest(sig)
 	if sig == nil {
 		t.Fatal("Signature nil")
@@ -74,12 +74,12 @@ func Test_Secp256_02s(t *testing.T) {
 func Test_Secp256_02(t *testing.T) {
 	pubkey1, seckey := GenerateKeyPair()
 	msg := RandByte(32)
-	sig := Sign(msg, seckey)
+	sig, _ := Sign(msg, seckey)
 	if sig == nil {
 		t.Fatal("Signature nil")
 	}
 
-	pubkey2 := RecoverPubkey(msg, sig)
+	pubkey2, _ := RecoverPubkey(msg, sig)
 	if pubkey2 == nil {
 		t.Fatal("Recovered pubkey invalid")
 	}
@@ -87,8 +87,8 @@ func Test_Secp256_02(t *testing.T) {
 		t.Fatal("Recovered pubkey does not match")
 	}
 
-	ret := VerifySignature(msg, sig, pubkey1)
-	if ret != 1 {
+	err := VerifySignature(msg, sig, pubkey1)
+	if err != nil {
 		t.Fatal("Signature invalid")
 	}
 }
@@ -97,17 +97,17 @@ func Test_Secp256_02(t *testing.T) {
 func Test_Secp256_02a(t *testing.T) {
 	pubkey1, seckey1 := GenerateKeyPair()
 	msg := RandByte(32)
-	sig := Sign(msg, seckey1)
+	sig, _ := Sign(msg, seckey1)
 
 	if sig == nil {
 		t.Fatal("Signature nil")
 	}
-	ret := VerifySignature(msg, sig, pubkey1)
-	if ret != 1 {
+	err := VerifySignature(msg, sig, pubkey1)
+	if err != nil {
 		t.Fatal("Signature invalid")
 	}
 
-	pubkey2 := RecoverPubkey(msg, sig)
+	pubkey2, _ := RecoverPubkey(msg, sig)
 	if len(pubkey1) != len(pubkey2) {
 		t.Fatal()
 	}
@@ -126,11 +126,11 @@ func Test_Secp256_03(t *testing.T) {
 	_, seckey := GenerateKeyPair()
 	for i := 0; i < TESTS; i++ {
 		msg := RandByte(32)
-		sig := Sign(msg, seckey)
+		sig, _ := Sign(msg, seckey)
 		CompactSigTest(sig)
 
 		sig[len(sig)-1] %= 4
-		pubkey2 := RecoverPubkey(msg, sig)
+		pubkey2, _ := RecoverPubkey(msg, sig)
 		if pubkey2 == nil {
 			t.Fail()
 		}
@@ -142,13 +142,13 @@ func Test_Secp256_04(t *testing.T) {
 	for i := 0; i < TESTS; i++ {
 		pubkey1, seckey := GenerateKeyPair()
 		msg := RandByte(32)
-		sig := Sign(msg, seckey)
+		sig, _ := Sign(msg, seckey)
 		CompactSigTest(sig)
 
 		if sig[len(sig)-1] >= 4 {
 			t.Fail()
 		}
-		pubkey2 := RecoverPubkey(msg, sig)
+		pubkey2, _ := RecoverPubkey(msg, sig)
 		if pubkey2 == nil {
 			t.Fail()
 		}
@@ -173,7 +173,7 @@ func randSig() []byte {
 func Test_Secp256_06a_alt0(t *testing.T) {
 	pubkey1, seckey := GenerateKeyPair()
 	msg := RandByte(32)
-	sig := Sign(msg, seckey)
+	sig,_ := Sign(msg, seckey)
 
 	if sig == nil {
 		t.Fail()
@@ -183,17 +183,17 @@ func Test_Secp256_06a_alt0(t *testing.T) {
 	}
 	for i := 0; i < TESTS; i++ {
 		sig = randSig()
-		pubkey2 := RecoverPubkey(msg, sig)
+		pubkey2, _ := RecoverPubkey(msg, sig)
 
 		if bytes.Equal(pubkey1, pubkey2) == true {
 			t.Fail()
 		}
 
-		if pubkey2 != nil && VerifySignature(msg, sig, pubkey2) != 1 {
+		if pubkey2 != nil && VerifySignature(msg, sig, pubkey2) != nil {
 			t.Fail()
 		}
 
-		if VerifySignature(msg, sig, pubkey1) == 1 {
+		if VerifySignature(msg, sig, pubkey1) == nil {
 			t.Fail()
 		}
 	}
@@ -204,21 +204,21 @@ func Test_Secp256_06a_alt0(t *testing.T) {
 func Test_Secp256_06b(t *testing.T) {
 	pubkey1, seckey := GenerateKeyPair()
 	msg := RandByte(32)
-	sig := Sign(msg, seckey)
+	sig, _ := Sign(msg, seckey)
 
 	fail_count := 0
 	for i := 0; i < TESTS; i++ {
 		msg = RandByte(32)
-		pubkey2 := RecoverPubkey(msg, sig)
+		pubkey2, _ := RecoverPubkey(msg, sig)
 		if bytes.Equal(pubkey1, pubkey2) == true {
 			t.Fail()
 		}
 
-		if pubkey2 != nil && VerifySignature(msg, sig, pubkey2) != 1 {
+		if pubkey2 != nil && VerifySignature(msg, sig, pubkey2) != nil {
 			t.Fail()
 		}
 
-		if VerifySignature(msg, sig, pubkey1) == 1 {
+		if VerifySignature(msg, sig, pubkey1) == nil {
 			t.Fail()
 		}
 	}
