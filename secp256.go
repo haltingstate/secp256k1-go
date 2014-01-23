@@ -245,7 +245,7 @@ func RecoverPubkey(msg []byte, sig []byte) ([]byte, error) {
 		log.Panic("Invalid signature length")
 	}
 
-	var pubkey []byte = make([]byte, 33)
+	var pubkey []byte = make([]byte, 65)
 
 	var msg_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&msg[0]))
 	var sig_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&sig[0]))
@@ -257,12 +257,12 @@ func RecoverPubkey(msg []byte, sig []byte) ([]byte, error) {
 		msg_ptr, C.int(len(msg)),
 		sig_ptr,
 		pubkey_ptr, &pubkeylen,
-		C.int(1), C.int(sig[64]),
+		C.int(0), C.int(sig[64]),
 	)
 
 	if ret == C.int(0) {
 		return nil, errors.New("Failed to recover public key")
-	} else if pubkeylen != C.int(33) {
+	} else if pubkeylen != C.int(65) {
 		log.Panic()
 		return nil, errors.New("Impossible Error: Invalid recovered public key length")
 	} else {
