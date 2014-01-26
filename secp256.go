@@ -268,4 +268,5 @@ func RecoverPubkey(msg []byte, sig []byte) ([]byte, error) {
 	} else {
 		return pubkey, nil
 	}
+	return nil, errors.New("Impossible Error: func RecoverPubkey has reached an unreachable state")
 }
