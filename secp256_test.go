@@ -20,6 +20,19 @@ func Test_Secp256_00(t *testing.T) {
 
 }
 
+func PubkeyFromSeckeyTest(t *testing.T) {
+	pubkey, seckey := GenerateKeyPair()
+
+	pubkey2 := PubkeyFromSeckey(seckey)
+
+	if pubkey2 == nil {
+		log.Panic("pubkey recovery failed")
+	}
+
+	if !bytes.Equal(pubkey, pubkey2) {
+		log.Panic("pubkeys not equal")
+	}
+}
 //tests for Malleability
 //highest bit of S must be 0; 32nd byte
 func CompactSigTest(sig []byte) {
