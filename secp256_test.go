@@ -20,19 +20,6 @@ func Test_Secp256_00(t *testing.T) {
 
 }
 
-func PubkeyFromSeckeyTest(t *testing.T) {
-	pubkey, seckey := GenerateKeyPair()
-
-	pubkey2 := PubkeyFromSeckey(seckey)
-
-	if pubkey2 == nil {
-		log.Panic("pubkey recovery failed")
-	}
-
-	if !bytes.Equal(pubkey, pubkey2) {
-		log.Panic("pubkeys not equal")
-	}
-}
 //tests for Malleability
 //highest bit of S must be 0; 32nd byte
 func CompactSigTest(sig []byte) {
@@ -52,10 +39,10 @@ func CompactSigTest(sig []byte) {
 //test pubkey/private generation
 func Test_Secp256_01(t *testing.T) {
 	pubkey, seckey := GenerateKeyPair()
-	if VerifySeckeyValidity(seckey) != 1 {
+	if VerifySeckey(seckey) != 1 {
 		t.Fatal()
 	}
-	if VerifyPubkeyValidity(pubkey) != 1 {
+	if VerifyPubkey(pubkey) != 1 {
 		t.Fatal()
 	}
 }

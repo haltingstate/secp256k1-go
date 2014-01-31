@@ -3,6 +3,7 @@ package secp256k1
 /*
 #cgo CFLAGS: -std=gnu99 -Wno-error
 #cgo LDFLAGS: -lgmp
+#cgo CFLAGS: -Wno-error
 #define USE_FIELD_10X26
 #define USE_NUM_GMP
 #define USE_FIELD_INV_BUILTIN
@@ -10,10 +11,17 @@ package secp256k1
 */
 import "C"
 
+//#cgo pkg-config: gmp
+//#cgo pkg-config: secp256
+
+//for osx 'xcode-select --install'
+
 import (
+	"unsafe"
+	//"fmt"
+	//"errors"
 	"bytes"
 	"log"
-	"unsafe"
 )
 
 //#define USE_FIELD_5X64
@@ -75,13 +83,13 @@ func GenerateKeyPair() ([]byte, []byte) {
 		pubkey_ptr, &pubkey_len,
 		seckey_ptr, 1)
 
-	if ret != C.int(1) {
+	if ret != 1 {
 		return GenerateKeyPair() //invalid secret, try again
 	}
 	return pubkey, seckey
 }
 
-//nil on error
+//returns nil on error
 func PubkeyFromSeckey(SecKey []byte) ([]byte) {
 	if len(SecKey) != 32 {
 		log.Panic("PubkeyFromSeckey: invalid length")
@@ -91,7 +99,7 @@ func PubkeyFromSeckey(SecKey []byte) ([]byte) {
 	const seckey_len = 32
 
 	var pubkey []byte = make([]byte, pubkey_len)
-	var seckey []byte
+	var seckey []byte = make([]byte, seckey_len)
 	copy(seckey, SecKey)
 
 	var pubkey_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&pubkey[0]))
@@ -106,6 +114,34 @@ func PubkeyFromSeckey(SecKey []byte) ([]byte) {
 	}
 	return pubkey
 }
+
+
+func GenerateDeterministicKeyPair(seed []byte) ([]byte, []byte) {
+	seed_hash := SumSHA256(seed) //hash the seed
+
+	pubkey_len := C.int(33)
+	const seckey_len = 32
+
+	var pubkey []byte = make([]byte, pubkey_len)
+	var seckey []byte = make([]byte, seckey_len)
+	copy(seckey[0:32], seed_hash[0:32])
+
+	var pubkey_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&pubkey[0]))
+	var seckey_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&seckey[0]))
+
+	ret := C.secp256k1_ecdsa_pubkey_create(
+		pubkey_ptr, &pubkey_len,
+		seckey_ptr, 1)
+
+	if ret != 1 {
+		//invalid secret, try different
+		seed_hash = SumSHA256(seed_hash[0:32])
+		return GenerateDeterministicKeyPair(seed_hash) 
+	}
+
+	return pubkey, seckey
+}
+
 
 /*
 *  Create a compact ECDSA signature (64 byte + recovery id).
@@ -165,9 +201,9 @@ func Sign(msg []byte, seckey []byte) []byte {
 *  In:      seckey: pointer to a 32-byte secret key
  */
 
-func VerifySeckeyValidity(seckey []byte) int {
+func VerifySeckey(seckey []byte) int {
 	if len(seckey) != 32 {
-		log.Panic()
+		return 0
 	}
 	var seckey_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&seckey[0]))
 	ret := C.secp256k1_ecdsa_seckey_verify(seckey_ptr)
@@ -180,9 +216,9 @@ func VerifySeckeyValidity(seckey []byte) int {
 *           0: invalid public key
  */
 
-func VerifyPubkeyValidity(pubkey []byte) int {
+func VerifyPubkey(pubkey []byte) int {
 	if len(pubkey) != 33 {
-		log.Panic()
+		return 0
 	}
 	var pubkey_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&pubkey[0]))
 	ret := C.secp256k1_ecdsa_pubkey_verify(pubkey_ptr, 33)
@@ -194,8 +230,8 @@ func VerifySignatureValidity(sig []byte) int {
 	if len(sig) != 65 {
 		return 0
 	}
-	//malleability check, highest bit must be 1
-	if (sig[32] & 0x80) == 0x80 {
+	//malleability check
+	if (sig[32] & 0x70) != sig[32] {
 		return 0
 	}
 	//recovery id check
@@ -205,7 +241,7 @@ func VerifySignatureValidity(sig []byte) int {
 	return 1
 }
 
-//for compressed signatures
+//for compressed signatures, does not need pubkey
 func VerifySignature(msg []byte, sig []byte, pubkey1 []byte) int {
 	if msg == nil || sig == nil || pubkey1 == nil {
 		log.Panic("ERROR: invalid input, nils")
@@ -216,6 +252,7 @@ func VerifySignature(msg []byte, sig []byte, pubkey1 []byte) int {
 	if len(pubkey1) != 33 {
 		log.Panic("invalid pubkey length")
 	}
+
 	//to enforce malleability, highest bit of S must be 0
 	//S starts at 32nd byte
 
@@ -245,7 +282,6 @@ func VerifySignature(msg []byte, sig []byte, pubkey1 []byte) int {
 	return 0
 }
 
-
 /*
 int secp256k1_ecdsa_recover_compact(const unsigned char *msg, int msglen,
                                     const unsigned char *sig64,
@@ -267,11 +303,11 @@ int secp256k1_ecdsa_recover_compact(const unsigned char *msg, int msglen,
 
 //recovers the public key from the signature
 //recovery of pubkey means correct signature
-
 func RecoverPubkey(msg []byte, sig []byte) []byte {
 	if len(sig) != 65 {
 		log.Panic()
 	}
+
 	var pubkey []byte = make([]byte, 33)
 
 	var msg_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&msg[0]))
@@ -293,4 +329,3 @@ func RecoverPubkey(msg []byte, sig []byte) []byte {
 
 	return pubkey
 }
-
