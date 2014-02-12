@@ -117,6 +117,9 @@ func PubkeyFromSeckey(SecKey []byte) ([]byte) {
 
 
 func GenerateDeterministicKeyPair(seed []byte) ([]byte, []byte) {
+	if seed == nil {
+		log.Panic()
+	}
 	seed_hash := SumSHA256(seed) //hash the seed
 
 	pubkey_len := C.int(33)
@@ -163,7 +166,15 @@ int secp256k1_ecdsa_sign_compact(const unsigned char *msg, int msglen,
                                  int *recid);
 */
 
+//Rename SignHash
 func Sign(msg []byte, seckey []byte) []byte {
+
+	if len(seckey) != 32 {
+		log.Panic("Sign, Invalid seckey length")
+	}
+	if msg == nil {
+		log.Panic("Sign, message nil")
+	}
 	var nonce []byte = RandByte(32) //going to get bitcoins stolen!
 
 	var sig []byte = make([]byte, 65)
@@ -187,6 +198,10 @@ func Sign(msg []byte, seckey []byte) []byte {
 
 	sig[64] = byte(int(recid))
 
+    if int(recid) >4 {
+        log.Panic()
+    }
+    
 	if ret != 1 {
 		return Sign(msg, seckey) //nonce invalid,retry
 	}
@@ -201,6 +216,7 @@ func Sign(msg []byte, seckey []byte) []byte {
 *  In:      seckey: pointer to a 32-byte secret key
  */
 
+//Rename ChkSeckeyValidity
 func VerifySeckey(seckey []byte) int {
 	if len(seckey) != 32 {
 		return 0
@@ -216,6 +232,7 @@ func VerifySeckey(seckey []byte) int {
 *           0: invalid public key
  */
 
+//Rename ChkPubkeyValidity
 func VerifyPubkey(pubkey []byte) int {
 	if len(pubkey) != 33 {
 		return 0
@@ -225,13 +242,16 @@ func VerifyPubkey(pubkey []byte) int {
 	return int(ret)
 }
 
+//Rename ChkSignatureValidity
 func VerifySignatureValidity(sig []byte) int {
 	//64+1
 	if len(sig) != 65 {
 		return 0
 	}
-	//malleability check
-	if (sig[32] & 0x70) != sig[32] {
+	//malleability check:
+	//highest bit of 32nd byte must be 1
+	//0x7f us 126 or 0b01111111
+	if (sig[32] >> 7) == 1 {
 		return 0
 	}
 	//recovery id check
@@ -242,22 +262,23 @@ func VerifySignatureValidity(sig []byte) int {
 }
 
 //for compressed signatures, does not need pubkey
+//Rename SignatureChk
 func VerifySignature(msg []byte, sig []byte, pubkey1 []byte) int {
 	if msg == nil || sig == nil || pubkey1 == nil {
-		log.Panic("ERROR: invalid input, nils")
+		log.Panic("VerifySignature, ERROR: invalid input, nils")
 	}
 	if len(sig) != 65 {
-		log.Panic("invalid signature length")
+		log.Panic("VerifySignature, invalid signature length")
 	}
 	if len(pubkey1) != 33 {
-		log.Panic("invalid pubkey length")
+		log.Panic("VerifySignature, invalid pubkey length")
 	}
 
-	//to enforce malleability, highest bit of S must be 0
+	//malleability check:
+	//to enforce malleability, highest bit of S must be 1
 	//S starts at 32nd byte
-
-	var b int = int(sig[32])
-	if (b & 0x80) == 0x80 {
+	//0x80 is 0b10000000 or 128 and masks highest bit
+	if (sig[32] >> 7) == 1 {
 		return 0 //valid signature, but fails malleability
 	}
 
@@ -275,11 +296,38 @@ func VerifySignature(msg []byte, sig []byte, pubkey1 []byte) int {
 		log.Panic("recovered pubkey length invalid")
 	}
 
-	if bytes.Equal(pubkey1, pubkey2) == true {
-		return 1 //valid signature
+	if bytes.Equal(pubkey1, pubkey2) != true {
+		return 0 //pubkeys do not match
 	}
 
-	return 0
+	return 1 //valid signature
+}
+
+//SignatureErrorString returns error string for signature failure
+func SignatureErrorString(msg []byte, sig []byte, pubkey1 []byte) string {
+
+	if msg == nil || len(sig) != 65 || len(pubkey1) != 33 {
+		log.Panic()
+	}
+
+	if (sig[32] >> 7) == 1 {
+		return "signature fails malleability requirement"
+	}
+
+	if sig[64] >= 4 {
+		return "signature recovery byte is invalid, must be 0 to 3"
+	}
+
+	pubkey2 := RecoverPubkey(msg, sig) //if pubkey recovered, signature valid
+	if pubkey2 == nil {
+		return "pubkey from signature failed"
+	}
+
+	if bytes.Equal(pubkey1, pubkey2) == false {
+		return "input pubkey and recovered pubkey do not match"
+	}
+
+	return "No Error!"
 }
 
 /*

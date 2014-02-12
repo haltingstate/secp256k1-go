@@ -20,6 +20,19 @@ func Test_Secp256_00(t *testing.T) {
 
 }
 
+//test agreement for highest bit test
+func Test_BitTwiddle(t *testing.T) {
+	var b byte
+	for i:=0; i<512; i++ {
+		var bool1 bool = ((b >> 7) == 1)
+		var bool2 bool = ((b & 0x80) == 0x80)
+		if bool1 != bool2 {
+			t.Fatal()
+		}
+		b++
+	}
+}
+
 //tests for Malleability
 //highest bit of S must be 0; 32nd byte
 func CompactSigTest(sig []byte) {
@@ -44,6 +57,54 @@ func Test_Secp256_01(t *testing.T) {
 	}
 	if VerifyPubkey(pubkey) != 1 {
 		t.Fatal()
+	}
+}
+
+//returns random pubkey, seckey, hash and signature
+func RandX () ([]byte,[]byte,[]byte,[]byte) {
+	pubkey, seckey := GenerateKeyPair()
+	msg := RandByte(32)
+	sig := Sign(msg, seckey)
+	return pubkey,seckey,msg,sig
+}
+
+func Test_SignatureVerifyPubkey(t *testing.T) {
+	pubkey1, seckey := GenerateKeyPair()
+	msg := RandByte(32)
+	sig := Sign(msg, seckey)
+	if VerifyPubkey(pubkey1) == 0 {
+		t.Fail()
+	}
+	pubkey2 := RecoverPubkey(msg, sig)
+	if bytes.Equal(pubkey1, pubkey2) == false {
+		t.Fatal("Recovered pubkey does not match")
+	}
+}
+
+func Test_verify_functions(t *testing.T) {
+	pubkey,seckey,hash,sig := RandX()
+	if VerifySeckey(seckey) == 0 {
+		t.Fail()
+	}
+	if VerifySeckey(seckey) == 0 {
+		t.Fail()
+	}
+	if VerifyPubkey(pubkey) == 0 {
+		t.Fail()
+	}
+	if VerifySignature(hash,sig,pubkey) == 0 {
+		t.Fail()
+	}
+	_ = sig
+}
+
+func Test_SignatureVerifySecKey(t *testing.T) {
+	pubkey, seckey := GenerateKeyPair()
+	if VerifySeckey(seckey) == 0 {
+		t.Fail()
+	}
+	if VerifyPubkey(pubkey) == 0 {
+		t.Fail()
 	}
 }
 
