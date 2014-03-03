@@ -115,8 +115,9 @@ func PubkeyFromSeckey(SecKey []byte) ([]byte) {
 	return pubkey
 }
 
-
-func GenerateDeterministicKeyPair(seed []byte) ([]byte, []byte) {
+//generates deterministic keypair with weak SHA256 hash of seed
+//internal use only
+func generateDeterministicKeyPair(seed []byte) ([]byte, []byte) {
 	if seed == nil {
 		log.Panic()
 	}
@@ -145,16 +146,29 @@ func GenerateDeterministicKeyPair(seed []byte) ([]byte, []byte) {
 	return pubkey, seckey
 }
 
-//Iterator for deterministic keypair generation. Returns SHA256, Seckey, Pubkey
+//this is a GPU and ASIC resistant hash function that combines SHA256 with operations on
+// and elliptic curve through  slow secp256k1 signature operations. designed to protect 
+// brainwallet seeds against GPU brute forcing
+func Secp256k1Hash(hash []byte) ([]byte) {
+	hash = SumSHA256(hash) //sha256
+	_,seckey := generateDeterministicKeyPair(hash) //generate key
+	sig := SignDeterministic(hash, seckey, hash)   //sign with key
+	return SumSHA256(append(SumSHA256(hash), sig...)) //append signature to sha256(seed) and hash
+}
+
+//generate a single secure key
+func GenerateDeterministicKeyPair(seed []byte) ([]byte, []byte) {
+	seed = Secp256k1Hash(seed)
+	pubkey,seckey := generateDeterministicKeyPair(seed)
+	return seckey,pubkey
+}
+
+//Iterator for deterministic keypair generation. Returns SHA256, Pubkey, Seckey
 //Feed SHA256 back into function to generate sequence of seckeys
 func DeterministicKeyPairIterator(seed []byte) ([]byte, []byte, []byte) {
-    //generate seckey from seed
-    seed = SumSHA256(seed)
-    pubkey,seckey := GenerateDeterministicKeyPair(seed) //this is our seckey
-    //generate next seed for next stage
-    sig := SignDeterministic(seed, seckey, seed)
-    seed_out := SumSHA256(append(SumSHA256(seed), sig...))
-    return seed_out, seckey,pubkey
+    seed = Secp256k1Hash(seed)
+    pubkey,seckey := generateDeterministicKeyPair(seed) //this is our seckey
+    return seed, pubkey, seckey
 }
 
 /*
