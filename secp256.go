@@ -145,6 +145,20 @@ func GenerateDeterministicKeyPair(seed []byte) ([]byte, []byte) {
 	return pubkey, seckey
 }
 
+//Iterator for deterministic keypair generation. Returns SHA256, Seckey
+//Feed SHA256 back into function to generate sequence of seckeys
+func DeterministicKeyPairIterator(seed_in []byte) ([]byte, []byte, []byte) {
+    //generate seckey from seed
+    seed_hash := SumSHA256(seed_in) //hash the seed
+    pubkey,seckey := GenerateDeterministicKeyPair(seed_hash) //this is our seckey
+    //generate next seed for next stage
+    nonce := SumSHA256(seed_hash)
+    sig := SignDeterministic(seed_hash, seckey, nonce)
+    seed2 := append(seed_hash, sig...)
+    seed_out := SumSHA256(seed2)
+    //return values 
+    return seed_out, seckey,pubkey
+}
 
 /*
 *  Create a compact ECDSA signature (64 byte + recovery id).
@@ -207,6 +221,42 @@ func Sign(msg []byte, seckey []byte) []byte {
 	}
 
 	return sig
+}
+
+//generate signature in repeatable way
+func SignDeterministic(msg []byte, seckey []byte, nonce_seed []byte) []byte {
+    nonce := SumSHA256(nonce_seed) //deterministicly generate nonce
+
+    var sig []byte = make([]byte, 65)
+    var recid C.int
+
+    var msg_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&msg[0]))
+    var seckey_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&seckey[0]))
+    var nonce_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&nonce[0]))
+    var sig_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&sig[0]))
+
+    if C.secp256k1_ecdsa_seckey_verify(seckey_ptr) != C.int(1) {
+        log.Panic("Invalid secret key")
+    }
+
+    ret := C.secp256k1_ecdsa_sign_compact(
+        msg_ptr, C.int(len(msg)),
+        sig_ptr,
+        seckey_ptr,
+        nonce_ptr,
+        &recid)
+
+    sig[64] = byte(int(recid))
+
+    if int(recid) > 4 {
+        log.Panic()
+    }
+
+    if ret != 1 {
+        return SignDeterministic(msg, seckey, nonce_seed) //nonce invalid,retry
+    }
+
+    return sig
 }
 
 /*
