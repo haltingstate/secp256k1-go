@@ -171,6 +171,9 @@ func DeterministicKeyPairIterator(seed []byte) ([]byte, []byte, []byte) {
     return seed, pubkey, seckey
 }
 
+
+
+
 /*
 *  Create a compact ECDSA signature (64 byte + recovery id).
 *  Returns: 1: signature created

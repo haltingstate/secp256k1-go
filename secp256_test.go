@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"testing"
+	"encoding/hex"
 )
 
 const TESTS = 10000 // how many tests
@@ -288,6 +289,9 @@ func Test_Secp256_06b(t *testing.T) {
 	}
 }
 
+/*
+	Deterministic Keypair Tests
+*/
 
 func Test_Deterministic_Keypairs_00(t *testing.T) {
 	for i := 0;i<64; i++ {
@@ -317,4 +321,56 @@ func Test_Deterministic_Keypairs_01(t *testing.T) {
 			t.Fail()
 		}
 	}
+}
+
+func Test_Deterministic_Keypairs_02(t *testing.T) {
+	for i := 0;i<64; i++ {
+		seed := RandByte(32)
+		_,pub1,sec1 := DeterministicKeyPairIterator(seed)
+		pub2,sec2 := GenerateDeterministicKeyPair(seed)
+
+		if bytes.Equal(pub1,pub2) == false {
+			t.Fail()
+		}
+		if bytes.Equal(sec1,sec2) == false {
+			t.Fail()
+		}
+	}
+}
+
+
+func Test_Deterministic_Keypairs_03(t *testing.T) {
+
+	//test vectors: seed, seckey
+	var test_array []string = []string {
+		"tQ93w5Aqcunm9SGUfnmF4fJv", "ea2ed66a9e9a15b755d40e42d562e474bb6504925dc597ad5b2f952b92490347",
+		"DC7qdQQtbWSSaekXnFmvQgse", "798e38e35c8a7c0386dff87a068f62e86adec98e82d343c012221a6b777e85b4",
+		"X8EkuUZC7Td7PAXeS7Duc7vR", "c9391c4e706ecc69af7583ade913e1dd279e229d24b3b54d6fb2da25d3a15a99",
+		"tVqPYHHNVPRWyEed62v7f23u", "11b1c5334efb8c8c4e342e0ba9f668cafc1126381285965bb781c60292fe349c",
+		"kCy4R57HDfLqF3pVhBWxuMcg", "5361af256a58704970cc0a4d193959b8bf57b3d66f1a2c8df895ab137b4c7115",
+		"j8bjv86ZNjKqzafR6mtSUVCE", "67243db363bd0b9b9dfbd5796a2753c15f9cb4693e2aedbe8e80d0a368f6ffa3",
+		"qShryAzVY8EtsuD3dsAc7qnG", "76873fc7f324b3afa40f1d87cb8ae9f82ae25391ec9d6993d03eeef99edb6657",
+		"5FGG7ZBa8wVMBJkmzpXj5ESX", "4029cd2863cdede053cac9869f78f53b814105fcf3fda79f2282239f8ea80937",
+		"f46TZG4xJHXUGWx8ekbNqa9F", "cb9d5100049b0a50f7f7a2a47e74b76ec8f0993809c9959c554202b81c8b6687",
+		"XkZdQJ5LT96wshN8JBH8rvEt", "738d97db6281485a2bffc1a574baf51d0962bfffcceecd061065ed75c3911141",
+		"GFDqXU4zYymhJJ9UGqRgS8ty", "a54431cb5d397d29ebfe42bce88427976f60f127b74d9142fa777b4745b6a047",
+		"tmwZksH2XyvuamnddYxyJ5Lp", "51e48511d1c3515a01f21dfe84c38f815c049c6b641eb674e469ea461d7a4bcf",
+		"EuqZFsbAV5amTzkhgAMgjr7W", "4516c1712581afc300daff0bb7c9d2a9d6586f4fb82db6ca402d1dd47d9765f8",
+		"TW6j8rMffZfmhyDEt2JUCrLB", "6997bde88a9c74079b7970b23b161b631de352892e01c5f45fdc10cff79b94d9",
+		"8rvkBnygfhWP8kjX9aXq68CY", "35a6ee7823f23b63aecca98de891fa59d14cc3b60ab6a06a9bfed5a257009f8a",
+		"phyRfPDuf9JMRFaWdGh7NXPX", "8f0fd7a670e3cc18d76c43d252da00ba44a99dd806fe03064a32ab025c73cd89",
+	}
+
+	for i:=0; i<len(test_array)/2; i++ {
+		seed := []byte(test_array[2*i+0])
+		sec1, err := hex.DecodeString(test_array[2*i+1])
+		if err != nil {
+			t.Fail()
+		}
+		_,sec2 := GenerateDeterministicKeyPair(seed)
+		if bytes.Equal(sec1,sec2) == false {
+			t.Fail()
+		}
+	}
+
 }
