@@ -287,3 +287,34 @@ func Test_Secp256_06b(t *testing.T) {
 		fmt.Printf("ERROR: Accepted signature for %v of %v random messages\n", fail_count, TESTS)
 	}
 }
+
+
+func Test_Deterministic_Keypairs_00(t *testing.T) {
+	for i := 0;i<64; i++ {
+		seed := RandByte(64)
+		_,pub1,sec1 := DeterministicKeyPairIterator(seed)
+		pub2,sec2 := GenerateDeterministicKeyPair(seed)
+
+		if bytes.Equal(pub1,pub2) == false {
+			t.Fail()
+		}
+		if bytes.Equal(sec1,sec2) == false {
+			t.Fail()
+		}
+	}
+}
+
+func Test_Deterministic_Keypairs_01(t *testing.T) {
+	for i := 0;i<64; i++ {
+		seed := RandByte(32)
+		_,pub1,sec1 := DeterministicKeyPairIterator(seed)
+		pub2,sec2 := GenerateDeterministicKeyPair(seed)
+
+		if bytes.Equal(pub1,pub2) == false {
+			t.Fail()
+		}
+		if bytes.Equal(sec1,sec2) == false {
+			t.Fail()
+		}
+	}
+}

@@ -147,7 +147,7 @@ func generateDeterministicKeyPair(seed []byte) ([]byte, []byte) {
 }
 
 //this is a GPU and ASIC resistant hash function that combines SHA256 with operations on
-// and elliptic curve through  slow secp256k1 signature operations. designed to protect 
+// elliptic curve through  slow secp256k1 signature operations. designed to protect 
 // brainwallet seeds against GPU brute forcing
 func Secp256k1Hash(hash []byte) ([]byte) {
 	hash = SumSHA256(hash) //sha256
@@ -160,7 +160,7 @@ func Secp256k1Hash(hash []byte) ([]byte) {
 func GenerateDeterministicKeyPair(seed []byte) ([]byte, []byte) {
 	seed = Secp256k1Hash(seed)
 	pubkey,seckey := generateDeterministicKeyPair(seed)
-	return seckey,pubkey
+	return pubkey,seckey
 }
 
 //Iterator for deterministic keypair generation. Returns SHA256, Pubkey, Seckey
