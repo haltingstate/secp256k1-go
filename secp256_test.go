@@ -37,7 +37,6 @@ func Test_BitTwiddle(t *testing.T) {
 //tests for Malleability
 //highest bit of S must be 0; 32nd byte
 func CompactSigTest(sig []byte) {
-
 	var b int = int(sig[32])
 	if b < 0 {
 		log.Panic()
@@ -377,7 +376,6 @@ func Test_Deterministic_Keypairs_03(t *testing.T) {
 			t.Fail()
 		}
 	}
-
 }
 
 func Test_Secp256k1_Hash(t *testing.T) {
@@ -409,5 +407,4 @@ func Test_Secp256k1_Hash(t *testing.T) {
 			t.Fail()
 		}
 	}
-
 }
