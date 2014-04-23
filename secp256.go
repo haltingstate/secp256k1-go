@@ -91,7 +91,7 @@ func GenerateKeyPair() ([]byte, []byte) {
 }
 
 //returns nil on error
-func PubkeyFromSeckey(SecKey []byte) ([]byte) {
+func PubkeyFromSeckey(SecKey []byte) []byte {
 	if len(SecKey) != 32 {
 		log.Panic("PubkeyFromSeckey: invalid length")
 	}
@@ -141,39 +141,36 @@ func generateDeterministicKeyPair(seed []byte) ([]byte, []byte) {
 	if ret != 1 {
 		//invalid secret, try different
 		seed_hash = SumSHA256(seed_hash[0:32])
-		return GenerateDeterministicKeyPair(seed_hash) 
+		return GenerateDeterministicKeyPair(seed_hash)
 	}
 
 	return pubkey, seckey
 }
 
 //this is a GPU and ASIC resistant hash function that combines SHA256 with operations on
-// elliptic curve through  slow secp256k1 signature operations. designed to protect 
+// elliptic curve through  slow secp256k1 signature operations. designed to protect
 // brainwallet seeds against GPU brute forcing
-func Secp256k1Hash(hash []byte) ([]byte) {
-	hash = SumSHA256(hash) //sha256
-	_,seckey := generateDeterministicKeyPair(hash) //generate key
-	sig := SignDeterministic(hash, seckey, hash)   //sign with key
+func Secp256k1Hash(hash []byte) []byte {
+	hash = SumSHA256(hash)                            //sha256
+	_, seckey := generateDeterministicKeyPair(hash)   //generate key
+	sig := SignDeterministic(hash, seckey, hash)      //sign with key
 	return SumSHA256(append(SumSHA256(hash), sig...)) //append signature to sha256(seed) and hash
 }
 
 //generate a single secure key
 func GenerateDeterministicKeyPair(seed []byte) ([]byte, []byte) {
 	seed = Secp256k1Hash(seed)
-	pubkey,seckey := generateDeterministicKeyPair(seed)
-	return pubkey,seckey
+	pubkey, seckey := generateDeterministicKeyPair(seed)
+	return pubkey, seckey
 }
 
 //Iterator for deterministic keypair generation. Returns SHA256, Pubkey, Seckey
 //Feed SHA256 back into function to generate sequence of seckeys
 func DeterministicKeyPairIterator(seed []byte) ([]byte, []byte, []byte) {
-    seed = Secp256k1Hash(seed)
-    pubkey,seckey := generateDeterministicKeyPair(seed) //this is our seckey
-    return seed, pubkey, seckey
+	seed = Secp256k1Hash(seed)
+	pubkey, seckey := generateDeterministicKeyPair(seed) //this is our seckey
+	return seed, pubkey, seckey
 }
-
-
-
 
 /*
 *  Create a compact ECDSA signature (64 byte + recovery id).
@@ -227,10 +224,10 @@ func Sign(msg []byte, seckey []byte) []byte {
 
 	sig[64] = byte(int(recid))
 
-    if int(recid) >4 {
-        log.Panic()
-    }
-    
+	if int(recid) > 4 {
+		log.Panic()
+	}
+
 	if ret != 1 {
 		return Sign(msg, seckey) //nonce invalid,retry
 	}
@@ -240,38 +237,38 @@ func Sign(msg []byte, seckey []byte) []byte {
 
 //generate signature in repeatable way
 func SignDeterministic(msg []byte, seckey []byte, nonce_seed []byte) []byte {
-    nonce := SumSHA256(nonce_seed) //deterministicly generate nonce
+	nonce := SumSHA256(nonce_seed) //deterministicly generate nonce
 
-    var sig []byte = make([]byte, 65)
-    var recid C.int
+	var sig []byte = make([]byte, 65)
+	var recid C.int
 
-    var msg_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&msg[0]))
-    var seckey_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&seckey[0]))
-    var nonce_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&nonce[0]))
-    var sig_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&sig[0]))
+	var msg_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&msg[0]))
+	var seckey_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&seckey[0]))
+	var nonce_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&nonce[0]))
+	var sig_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&sig[0]))
 
-    if C.secp256k1_ecdsa_seckey_verify(seckey_ptr) != C.int(1) {
-        log.Panic("Invalid secret key")
-    }
+	if C.secp256k1_ecdsa_seckey_verify(seckey_ptr) != C.int(1) {
+		log.Panic("Invalid secret key")
+	}
 
-    ret := C.secp256k1_ecdsa_sign_compact(
-        msg_ptr, C.int(len(msg)),
-        sig_ptr,
-        seckey_ptr,
-        nonce_ptr,
-        &recid)
+	ret := C.secp256k1_ecdsa_sign_compact(
+		msg_ptr, C.int(len(msg)),
+		sig_ptr,
+		seckey_ptr,
+		nonce_ptr,
+		&recid)
 
-    sig[64] = byte(int(recid))
+	sig[64] = byte(int(recid))
 
-    if int(recid) > 4 {
-        log.Panic()
-    }
+	if int(recid) > 4 {
+		log.Panic()
+	}
 
-    if ret != 1 {
-        return SignDeterministic(msg, seckey, nonce_seed) //nonce invalid,retry
-    }
+	if ret != 1 {
+		return SignDeterministic(msg, seckey, nonce_seed) //nonce invalid,retry
+	}
 
-    return sig
+	return sig
 }
 
 /*
