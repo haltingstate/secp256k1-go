@@ -15,6 +15,7 @@ import "C"
 //#cgo pkg-config: secp256
 
 //for osx 'xcode-select --install'
+//in 10.9 (mavericks) it fails. See README.md
 
 import (
 	"unsafe"
