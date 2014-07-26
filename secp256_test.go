@@ -434,3 +434,27 @@ func Test_ECDH(t *testing.T) {
 	}
 
 }
+
+func Test_ECDH2(t *testing.T) {
+
+	for i := 0; i < 1024; i++ {
+
+		pubkey1, seckey1 := GenerateKeyPair()
+		pubkey2, seckey2 := GenerateKeyPair()
+
+		puba := ECDH(pubkey1, seckey2)
+		pubb := ECDH(pubkey2, seckey1)
+
+		if puba == nil {
+			t.Fail()
+		}
+
+		if pubb == nil {
+			t.Fail()
+		}
+
+		if bytes.Equal(puba, pubb) == false {
+			t.Fail()
+		}
+	}
+}

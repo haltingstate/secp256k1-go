@@ -76,11 +76,15 @@ func GenerateKeyPair() ([]byte, []byte) {
 	var pubkey []byte = make([]byte, pubkey_len)
 	var pubkey_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&pubkey[0]))
 
+	var ret C.int
+
 new_seckey:
 	var seckey []byte = RandByte(seckey_len)
 	var seckey_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&seckey[0]))
 
-	if C.secp256k1_ecdsa_seckey_verify(seckey_ptr) != 1 {
+	ret = C.secp256k1_ecdsa_seckey_verify(seckey_ptr)
+
+	if ret != 1 {
 		goto new_seckey
 	}
 
@@ -89,13 +93,14 @@ new_seckey:
 	//	seckey_ptr = (*C.uchar)(unsafe.Pointer(&seckey[0]))
 	//}
 
-	ret := C.secp256k1_ecdsa_pubkey_create(
+	ret = C.secp256k1_ecdsa_pubkey_create(
 		pubkey_ptr, &pubkey_len,
 		seckey_ptr, 1)
 
 	if ret != 1 {
-		return GenerateKeyPair() //invalid secret, try again
+		goto new_seckey
 	}
+
 	return pubkey, seckey
 }
 
@@ -152,7 +157,7 @@ new_seckey:
 		pubkey_ptr, &pubkey_len,
 		seckey_ptr, 1)
 
-	if ret == 1 {
+	if ret != 1 {
 		log.Panic("secp256k1-g0, generateDeterministicKeyPair, pubkey generation failing for valid seckey")
 	}
 
