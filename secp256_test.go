@@ -37,7 +37,6 @@ func Test_BitTwiddle(t *testing.T) {
 //tests for Malleability
 //highest bit of S must be 0; 32nd byte
 func CompactSigTest(sig []byte) {
-
 	var b int = int(sig[32])
 	if b < 0 {
 		log.Panic()
@@ -57,6 +56,30 @@ func Test_Secp256_01(t *testing.T) {
 		t.Fatal()
 	}
 	if VerifyPubkey(pubkey) != 1 {
+		t.Fatal()
+	}
+}
+
+// test compressed pubkey from private key
+func Test_PubkeyFromSeckey(t *testing.T) {
+	// http://www.righto.com/2014/02/bitcoins-hard-way-using-raw-bitcoin.html
+	privkey, _ := hex.DecodeString(`f19c523315891e6e15ae0608a35eec2e00ebd6d1984cf167f46336dabd9b2de4`)
+	desiredPubKey, _ := hex.DecodeString(`03fe43d0c2c3daab30f9472beb5b767be020b81c7cc940ed7a7e910f0c1d9feef1`)
+	if pubkey := PubkeyFromSeckey(privkey); pubkey == nil {
+		t.Fatal()
+	} else if !bytes.Equal(pubkey, desiredPubKey) {
+		t.Fatal()
+	}
+}
+
+// test uncompressed pubkey from private key
+func Test_UncompressedPubkeyFromSeckey(t *testing.T) {
+	// http://www.righto.com/2014/02/bitcoins-hard-way-using-raw-bitcoin.html
+	privkey, _ := hex.DecodeString(`f19c523315891e6e15ae0608a35eec2e00ebd6d1984cf167f46336dabd9b2de4`)
+	desiredPubKey, _ := hex.DecodeString(`04fe43d0c2c3daab30f9472beb5b767be020b81c7cc940ed7a7e910f0c1d9feef10fe85eb3ce193405c2dd8453b7aeb6c1752361efdbf4f52ea8bf8f304aab37ab`)
+	if pubkey := UncompressedPubkeyFromSeckey(privkey); pubkey == nil {
+		t.Fatal()
+	} else if !bytes.Equal(pubkey, desiredPubKey) {
 		t.Fatal()
 	}
 }
@@ -377,7 +400,6 @@ func Test_Deterministic_Keypairs_03(t *testing.T) {
 			t.Fail()
 		}
 	}
-
 }
 
 func Test_Secp256k1_Hash(t *testing.T) {
@@ -410,6 +432,7 @@ func Test_Secp256k1_Hash(t *testing.T) {
 		}
 	}
 }
+<<<<<<< HEAD
 
 //func ECDH(pub []byte, sec []byte) []byte {
 
@@ -458,3 +481,5 @@ func Test_ECDH2(t *testing.T) {
 		}
 	}
 }
+=======
+>>>>>>> 39363dfa3322d71499c660ab528ba48d4f7c1456

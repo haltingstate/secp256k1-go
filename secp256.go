@@ -15,6 +15,7 @@ import "C"
 //#cgo pkg-config: secp256
 
 //for osx 'xcode-select --install'
+//in 10.9 (mavericks) it fails. See README.md
 
 import (
 	"unsafe"
@@ -130,6 +131,32 @@ func PubkeyFromSeckey(SecKey []byte) []byte {
 	return pubkey
 }
 
+//returns nil on error
+func UncompressedPubkeyFromSeckey(SecKey []byte) []byte {
+	if len(SecKey) != 32 {
+		log.Panic("PubkeyFromSeckey: invalid length")
+	}
+
+	pubkey_len := C.int(65)
+	const seckey_len = 32
+
+	var pubkey []byte = make([]byte, pubkey_len)
+	var seckey []byte = make([]byte, seckey_len)
+	copy(seckey, SecKey)
+
+	var pubkey_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&pubkey[0]))
+	var seckey_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&seckey[0]))
+
+	ret := C.secp256k1_ecdsa_pubkey_create(
+		pubkey_ptr, &pubkey_len,
+		seckey_ptr, 0)
+
+	if ret != 1 {
+		return nil
+	}
+	return pubkey
+}
+
 //generates deterministic keypair with weak SHA256 hash of seed
 //internal use only
 func generateDeterministicKeyPair(seed []byte) ([]byte, []byte) {
@@ -158,7 +185,13 @@ new_seckey:
 		seckey_ptr, 1)
 
 	if ret != 1 {
+<<<<<<< HEAD
 		log.Panic("secp256k1-g0, generateDeterministicKeyPair, pubkey generation failing for valid seckey")
+=======
+		//invalid secret, try different
+		seed_hash = SumSHA256(seed_hash[0:32])
+		return GenerateDeterministicKeyPair(seed_hash)
+>>>>>>> 39363dfa3322d71499c660ab528ba48d4f7c1456
 	}
 
 	return pubkey, seckey
