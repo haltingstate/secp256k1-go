@@ -185,13 +185,7 @@ new_seckey:
 		seckey_ptr, 1)
 
 	if ret != 1 {
-<<<<<<< HEAD
 		log.Panic("secp256k1-g0, generateDeterministicKeyPair, pubkey generation failing for valid seckey")
-=======
-		//invalid secret, try different
-		seed_hash = SumSHA256(seed_hash[0:32])
-		return GenerateDeterministicKeyPair(seed_hash)
->>>>>>> 39363dfa3322d71499c660ab528ba48d4f7c1456
 	}
 
 	return pubkey, seckey
