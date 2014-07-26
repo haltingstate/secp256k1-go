@@ -432,7 +432,6 @@ func Test_Secp256k1_Hash(t *testing.T) {
 		}
 	}
 }
-<<<<<<< HEAD
 
 //func ECDH(pub []byte, sec []byte) []byte {
 
@@ -481,5 +480,3 @@ func Test_ECDH2(t *testing.T) {
 		}
 	}
 }
-=======
->>>>>>> 39363dfa3322d71499c660ab528ba48d4f7c1456
