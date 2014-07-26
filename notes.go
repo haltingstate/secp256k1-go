@@ -1,5 +1,60 @@
 package secp256k1
 
+
+/*
+Key Exchange:
+<sipa> HaltingState: you need the multiplicative tweak
+<sipa> there's no "ECDH" as such in the library, but the required operations are there
+<sipa> it's trivial
+<sipa> both compute a private key, compute the corresponding public key, send the public keys to eachother, and then tweak the other's public key with their own private key
+<sipa> the result is the shared secret
+<kjj> the shared secret is (your private key) * (their public key), which is equal to G * (your privkey) * (their privkey)
+*/
+
+/*
+
+
+
+<sipa> HaltingState: you have a and B, i have A and b
+* airq (~airq@31-12.192-178.cust.bluewin.ch) has joined #bitcoin-dev
+<sipa> where A = a*G and B = b*G
+<sipa> so both can compute a*B = b*A = a*b*G
+<HaltingState> but what if you dont have my pubkey
+<sipa> i always do
+<HaltingState> i have to send my pubkey with the message
+<sipa> you can't do ECDH otherwise
+<sipa> yes?
+<sipa> so in that case, one of the keys is the actual receiver's pubkey
+<sipa> the other is an ephemeral key
+<sipa> created by the sender, just for this message
+<HaltingState> so my pubkey is in plaintext, so i should generate new random pubkey for first part until session key is setup for symmetric encryption
+<sipa> so i want to send an encrypted message to you
+<sipa> i have you public key P = p*G
+<sipa> i generate an ephemeral key E = e*G
+<sipa> and compute H(e*P), and send (E,enc(key=H(e*P),msg))
+<sipa> the receiver than has p and E, so can compute p*E = p*e*G = e*p*G = e*P, and the hash thereof
+<sipa> and can thus decrypt the message
+*/
+
+
+/*
+<sipa> where A = a*G and B = b*G
+<sipa> so both can compute a*B = b*A = a*b*G
+<HaltingState> but what if you dont have my pubkey
+<sipa> i always do
+* Coincidental has quit (Remote host closed the connection)
+<HaltingState> i have to send my pubkey with the message
+<sipa> you can't do ECDH otherwise
+* NLNico has quit (Quit: Leaving)
+<sipa> yes?
+<sipa> so in that case, one of the keys is the actual receiver's pubkey
+<sipa> the other is an ephemeral key
+<sipa> created by the sender, just for this message
+<HaltingState> so my pubkey is in plaintext, so i should generate new random pubkey for first part until session key is setup for symmetric encryption
+<sipa> so i want to send an encrypted message to you
+<sipa> i have you public key P = p*G
+*/
+
 /*
 <HaltingState> sipa, int secp256k1_ecdsa_pubkey_create(unsigned char *pubkey, int *pubkeylen, const unsigned char *seckey, int compressed);
 <HaltingState> is that how i generate private/public keys?
@@ -25,7 +80,7 @@ package secp256k1
 
 <sipa> HaltingState: yes, n,q = private keys; N,Q = corresponding public keys (N=n*G, Q=q*G); then it follows that n*Q = n*q*G = q*n*G = q*N
 <sipa> that's the reason ECDH works
-<sipa> multiplication is associative and commutativ
+<sipa> multiplication is associative and commutative
 */
 
 /*
