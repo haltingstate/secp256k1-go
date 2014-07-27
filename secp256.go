@@ -159,6 +159,7 @@ func UncompressedPubkeyFromSeckey(SecKey []byte) []byte {
 
 //generates deterministic keypair with weak SHA256 hash of seed
 //internal use only
+//be extremely careful with golang slice semantics
 func generateDeterministicKeyPair(seed []byte) ([]byte, []byte) {
 	if seed == nil {
 		log.Panic()
@@ -177,7 +178,7 @@ new_seckey:
 	seed = SumSHA256(seed[0:32])
 	copy(seckey[0:32], seed[0:32])
 	if C.secp256k1_ecdsa_seckey_verify(seckey_ptr) != 1 {
-		goto new_seckey //rehash seckey until it succeeds
+		goto new_seckey //rehash seckey until it succeeds, almost never happens
 	}
 
 	ret := C.secp256k1_ecdsa_pubkey_create(
@@ -194,26 +195,38 @@ new_seckey:
 //this is a GPU and ASIC resistant hash function that combines SHA256 with operations on
 // elliptic curve through  slow secp256k1 signature operations. designed to protect
 // brainwallet seeds against GPU brute forcing
+
+/*
 func Secp256k1Hash(hash []byte) []byte {
 	hash = SumSHA256(hash)                            //sha256
 	_, seckey := generateDeterministicKeyPair(hash)   //generate key
 	sig := SignDeterministic(hash, seckey, hash)      //sign with key
 	return SumSHA256(append(SumSHA256(hash), sig...)) //append signature to sha256(seed) and hash
 }
+*/
+
+//double SHA256, salted with ECDH operation in curve
+func Secp256k1Hash(hash []byte) []byte {
+	hash = SumSHA256(hash)
+	_, seckey := generateDeterministicKeyPair(hash)            //seckey1 is usually sha256 of hash
+	pubkey, _ := generateDeterministicKeyPair(SumSHA256(hash)) //SumSHA256(hash) equals seckey usually
+	ecdh := ECDH(pubkey, seckey)                               //raise pubkey to power of seckey in curve
+	return SumSHA256(append(hash, ecdh...))                    //append signature to sha256(seed) and hash
+}
 
 //generate a single secure key
 func GenerateDeterministicKeyPair(seed []byte) ([]byte, []byte) {
-	seed = Secp256k1Hash(seed)
-	pubkey, seckey := generateDeterministicKeyPair(seed)
+	_, pubkey, seckey := DeterministicKeyPairIterator(seed)
 	return pubkey, seckey
 }
 
 //Iterator for deterministic keypair generation. Returns SHA256, Pubkey, Seckey
 //Feed SHA256 back into function to generate sequence of seckeys
-func DeterministicKeyPairIterator(seed []byte) ([]byte, []byte, []byte) {
-	seed = Secp256k1Hash(seed)
-	pubkey, seckey := generateDeterministicKeyPair(seed) //this is our seckey
-	return seed, pubkey, seckey
+func DeterministicKeyPairIterator(seed_in []byte) ([]byte, []byte, []byte) {
+	seed1 := Secp256k1Hash(seed_in) //make it difficult to derive future seckeys from previous seckeys
+	seed2 := SumSHA256(append(seed_in, seed1...))
+	pubkey, seckey := generateDeterministicKeyPair(seed2) //this is our seckey
+	return seed1, pubkey, seckey
 }
 
 /*
