@@ -10,7 +10,7 @@ import (
 
 	"crypto/sha256"
 	"hash"
-	"panic"
+	"log"
 )
 
 var (
