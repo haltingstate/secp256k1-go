@@ -121,7 +121,13 @@ func PubkeyFromSeckey(SecKey []byte) []byte {
 	var pubkey_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&pubkey[0]))
 	var seckey_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&seckey[0]))
 
-	ret := C.secp256k1_ecdsa_pubkey_create(
+	//ensure that private key is valid
+	ret := C.secp256k1_ecdsa_seckey_verify(seckey_ptr)
+	if ret != 1 {
+		log.Panic("PubkeyFromSeckey: invalid seckey")
+	}
+	//create public key from seckey
+	ret = C.secp256k1_ecdsa_pubkey_create(
 		pubkey_ptr, &pubkey_len,
 		seckey_ptr, 1)
 
@@ -258,7 +264,7 @@ func Sign(msg []byte, seckey []byte) []byte {
 	if msg == nil {
 		log.Panic("Sign, message nil")
 	}
-	var nonce []byte = RandByte(32) //going to get bitcoins stolen!
+	var nonce []byte = RandByte(32)
 
 	var sig []byte = make([]byte, 65)
 	var recid C.int
@@ -286,7 +292,7 @@ func Sign(msg []byte, seckey []byte) []byte {
 	}
 
 	if ret != 1 {
-		return Sign(msg, seckey) //nonce invalid,retry
+		return Sign(msg, seckey) //nonce invalid, retry
 	}
 
 	return sig
