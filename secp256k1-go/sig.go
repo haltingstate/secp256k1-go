@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"log"
 )
 
 type Signature struct {
@@ -13,26 +14,6 @@ type Signature struct {
 func (s *Signature) Print(lab string) {
 	fmt.Println(lab+".R:", hex.EncodeToString(s.R.Bytes()))
 	fmt.Println(lab+".S:", hex.EncodeToString(s.S.Bytes()))
-}
-
-func (r *Signature) ParseBytes(sig []byte) int {
-	if sig[0] != 0x30 || len(sig) < 5 {
-		return -1
-	}
-
-	lenr := int(sig[3])
-	if lenr == 0 || 5+lenr >= len(sig) || sig[lenr+4] != 0x02 {
-		return -1
-	}
-
-	lens := int(sig[lenr+5])
-	if lens == 0 || int(sig[1]) != lenr+lens+4 || lenr+lens+6 > len(sig) || sig[2] != 0x02 {
-		return -1
-	}
-
-	r.R.SetBytes(sig[4 : 4+lenr])
-	r.S.SetBytes(sig[6+lenr : 6+lenr+lens])
-	return 6 + lenr + lens
 }
 
 func (r *Signature) Verify(pubkey *XY, message *Number) (ret bool) {
@@ -145,6 +126,29 @@ func (sig *Signature) Sign(seckey, message, nonce *Number, recid *int) int {
 	return 1
 }
 
+/*
+func (r *Signature) ParseBytes(sig []byte) int {
+	if sig[0] != 0x30 || len(sig) < 5 {
+		return -1
+	}
+
+	lenr := int(sig[3])
+	if lenr == 0 || 5+lenr >= len(sig) || sig[lenr+4] != 0x02 {
+		return -1
+	}
+
+	lens := int(sig[lenr+5])
+	if lens == 0 || int(sig[1]) != lenr+lens+4 || lenr+lens+6 > len(sig) || sig[2] != 0x02 {
+		return -1
+	}
+
+	r.R.SetBytes(sig[4 : 4+lenr])
+	r.S.SetBytes(sig[6+lenr : 6+lenr+lens])
+	return 6 + lenr + lens
+}
+*/
+
+/*
 func (sig *Signature) Bytes() []byte {
 	r := sig.R.Bytes()
 	if r[0] >= 0x80 {
@@ -162,6 +166,34 @@ func (sig *Signature) Bytes() []byte {
 	res.Write(r)
 	res.WriteByte(0x02)
 	res.WriteByte(byte(len(s)))
+	res.Write(s)
+	return res.Bytes()
+}
+*/
+
+func (r *Signature) ParseBytes(sig []byte) int {
+	r.R.SetBytes(sig[0:32])
+	r.S.SetBytes(sig[32:64])
+	return 64
+}
+
+func (sig *Signature) Bytes() []byte {
+	r := sig.R.Bytes()
+	s := sig.S.Bytes()
+
+	for len(r) < 32 {
+		r = append([]byte{0}, r...)
+	}
+	for len(s) < 32 {
+		s = append([]byte{0}, s...)
+	}
+
+	if len(r) != 32 || len(s) != 32 {
+		log.Panic("signature size invalid: %s, %s", len(r), len(s))
+	}
+
+	res := new(bytes.Buffer)
+	res.Write(r)
 	res.Write(s)
 	return res.Bytes()
 }

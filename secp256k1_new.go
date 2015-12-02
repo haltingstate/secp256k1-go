@@ -126,7 +126,7 @@ func _GenerateKeyPair() ([]byte, []byte) {
 		log.Panic("ERROR: impossible, bad pubkey form privatekey")
 	}
 	if pub_test.IsValid() == false {
-		log.Panic("ERror: impossible, pubkey not valid")
+		log.Panic("ERROR: impossible, pubkey not valid")
 	}
 
 	return pubkey, seckey
@@ -248,7 +248,7 @@ func _UncompressedPubkeyFromSeckey(seckey []byte) []byte {
 		log.Panic("ERror: impossible, pubkey not valid")
 	}
 
-	var pubkey2 []byte = pub_xy.Bytes(false) //uncompressed
+	var pubkey2 []byte = pub_xy.BytesUncompressed() //uncompressed
 	if pubkey2 == nil {
 		log.Panic("ERROR: pubkey uncompsesion fail")
 	}
@@ -399,14 +399,18 @@ func _Sign(msg []byte, seckey []byte) []byte {
 
 	ret := cSig.Sign(&seckey1, &msg1, &nonce1, &recid)
 
+	if ret != 1 {
+		log.Panic("Secp25k1-go, _Sign, signature operation failed")
+	}
+
+	sig_bytes := cSig.Bytes()
+	if len(sig_bytes) != 64 {
+		log.Fatal("Invalid signature byte count: %s", len(sig_bytes))
+	}
 	sig[64] = byte(int(recid))
 
 	if int(recid) > 4 {
 		log.Panic()
-	}
-
-	if ret != 1 {
-		log.Panic("Secp25k1-go, _Sign, signature operation failed")
 	}
 
 	return sig
@@ -464,14 +468,17 @@ func _SignDeterministic(msg []byte, seckey []byte, nonce_seed []byte) []byte {
 
 	ret := cSig.Sign(&seckey1, &msg1, &nonce1, &recid)
 
-	sig[64] = byte(int(recid))
+	sig[64] = byte(recid)
 
 	if int(recid) > 4 {
 		log.Panic()
 	}
 
 	if ret != 1 {
-		return _SignDeterministic(msg, seckey, nonce_seed) //nonce invalid,retry
+		log.Panic("Secp256k1-go, SignDeterministic, signature fail")
+		return nil
+		//try again?
+		//return _SignDeterministic(msg, seckey, nonce_seed) //nonce invalid,retry
 	}
 
 	return sig
@@ -547,6 +554,7 @@ func _VerifySeckey(seckey []byte) int {
 //Rename ChkPubkeyValidity
 func _VerifyPubkey(pubkey []byte) int {
 	if len(pubkey) != 33 {
+		//log.Printf("Seck256k1, VerifyPubkey, pubkey length invalid")
 		return 0
 	}
 
@@ -554,31 +562,28 @@ func _VerifyPubkey(pubkey []byte) int {
 	ret := pubkey1.ParsePubkey(pubkey)
 
 	if ret == false {
-		return 0
-	} else {
-		return 1
+		return 0 //invalid
 	}
-	/*
-		var pubkey_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&pubkey[0]))
-		ret := C.secp256k1_ecdsa_pubkey_verify(pubkey_ptr, 33)
-		return int(ret)
-	*/
+	return 1 //valid
 }
 
 //Rename ChkSignatureValidity
 func _VerifySignatureValidity(sig []byte) int {
 	//64+1
 	if len(sig) != 65 {
+		log.Fatal("1")
 		return 0
 	}
 	//malleability check:
 	//highest bit of 32nd byte must be 1
 	//0x7f us 126 or 0b01111111
 	if (sig[32] >> 7) == 1 {
+		log.Fatal("2")
 		return 0
 	}
 	//recovery id check
 	if sig[64] >= 4 {
+		log.Fatal("3")
 		return 0
 	}
 	return 1
@@ -680,17 +685,18 @@ func _RecoverPubkey(msg []byte, sig []byte) []byte {
 	}
 
 	var recid int = int(sig[64])
-	var msg1 secp.Number
+	//var msg1 secp.Number
 
 	var pubkey1 secp.XY
 
-	msg1.SetBytes(msg)
+	//msg1.SetBytes(msg)
 	//sig1.SetBytes(sig)
 
 	var sig1 secp.Signature
 	ret := sig1.ParseBytes(sig[0:64])
 	if ret == -1 {
 		//log.Panic("secp256k1, RecoverPubKey, recovery failed")
+		log.Fatal("Parse Bytes Fail")
 		return nil
 	}
 
@@ -705,7 +711,7 @@ func _RecoverPubkey(msg []byte, sig []byte) []byte {
 		return nil
 	}
 
-	var pubkey2 []byte = pubkey1.Bytes(true) //compressed
+	var pubkey2 []byte = pubkey1.Bytes() //compressed
 
 	if len(pubkey2) != 33 {
 		log.Panic("pubkey length wrong")

@@ -8,10 +8,10 @@ import (
 	"testing"
 )
 
-const TESTS = 10000 // how many tests
-const SigSize = 65  //64+1
+//const TESTS = 10000 // how many tests
+//const SigSize = 65  //64+1
 
-func Test_Secp256_00(t *testing.T) {
+func Test_Secp256_002(t *testing.T) {
 
 	var nonce []byte = RandByte(32) //going to get bitcoins stolen!
 
@@ -22,7 +22,7 @@ func Test_Secp256_00(t *testing.T) {
 }
 
 //test agreement for highest bit test
-func Test_BitTwiddle(t *testing.T) {
+func Test_BitTwiddle2(t *testing.T) {
 	var b byte
 	for i := 0; i < 512; i++ {
 		var bool1 bool = ((b >> 7) == 1)
@@ -36,7 +36,7 @@ func Test_BitTwiddle(t *testing.T) {
 
 //tests for Malleability
 //highest bit of S must be 0; 32nd byte
-func CompactSigTest(sig []byte) {
+func CompactSigTest2(sig []byte) {
 	var b int = int(sig[32])
 	if b < 0 {
 		log.Panic()
@@ -50,22 +50,22 @@ func CompactSigTest(sig []byte) {
 }
 
 //test pubkey/private generation
-func Test_Secp256_01(t *testing.T) {
-	pubkey, seckey := GenerateKeyPair()
-	if VerifySeckey(seckey) != 1 {
+func Test_Secp256_012(t *testing.T) {
+	pubkey, seckey := _GenerateKeyPair()
+	if _VerifySeckey(seckey) != 1 {
 		t.Fatal()
 	}
-	if VerifyPubkey(pubkey) != 1 {
+	if _VerifyPubkey(pubkey) != 1 {
 		t.Fatal()
 	}
 }
 
 // test compressed pubkey from private key
-func Test_PubkeyFromSeckey(t *testing.T) {
+func Test_PubkeyFromSeckey2(t *testing.T) {
 	// http://www.righto.com/2014/02/bitcoins-hard-way-using-raw-bitcoin.html
 	privkey, _ := hex.DecodeString(`f19c523315891e6e15ae0608a35eec2e00ebd6d1984cf167f46336dabd9b2de4`)
 	desiredPubKey, _ := hex.DecodeString(`03fe43d0c2c3daab30f9472beb5b767be020b81c7cc940ed7a7e910f0c1d9feef1`)
-	if pubkey := PubkeyFromSeckey(privkey); pubkey == nil {
+	if pubkey := _PubkeyFromSeckey(privkey); pubkey == nil {
 		t.Fatal()
 	} else if !bytes.Equal(pubkey, desiredPubKey) {
 		t.Fatal()
@@ -73,11 +73,11 @@ func Test_PubkeyFromSeckey(t *testing.T) {
 }
 
 // test uncompressed pubkey from private key
-func Test_UncompressedPubkeyFromSeckey(t *testing.T) {
+func Test_UncompressedPubkeyFromSeckey2(t *testing.T) {
 	// http://www.righto.com/2014/02/bitcoins-hard-way-using-raw-bitcoin.html
 	privkey, _ := hex.DecodeString(`f19c523315891e6e15ae0608a35eec2e00ebd6d1984cf167f46336dabd9b2de4`)
 	desiredPubKey, _ := hex.DecodeString(`04fe43d0c2c3daab30f9472beb5b767be020b81c7cc940ed7a7e910f0c1d9feef10fe85eb3ce193405c2dd8453b7aeb6c1752361efdbf4f52ea8bf8f304aab37ab`)
-	if pubkey := UncompressedPubkeyFromSeckey(privkey); pubkey == nil {
+	if pubkey := _UncompressedPubkeyFromSeckey(privkey); pubkey == nil {
 		t.Fatal()
 	} else if !bytes.Equal(pubkey, desiredPubKey) {
 		t.Fatal()
@@ -85,55 +85,71 @@ func Test_UncompressedPubkeyFromSeckey(t *testing.T) {
 }
 
 //returns random pubkey, seckey, hash and signature
-func RandX() ([]byte, []byte, []byte, []byte) {
-	pubkey, seckey := GenerateKeyPair()
+func RandX2() ([]byte, []byte, []byte, []byte) {
+	pubkey, seckey := _GenerateKeyPair()
 	msg := RandByte(32)
-	sig := Sign(msg, seckey)
+	sig := _Sign(msg, seckey)
 	return pubkey, seckey, msg, sig
 }
 
-func Test_SignatureVerifyPubkey(t *testing.T) {
-	pubkey1, seckey := GenerateKeyPair()
-	msg := RandByte(32)
-	sig := Sign(msg, seckey)
-	if VerifyPubkey(pubkey1) == 0 {
+func Test_SignatureVerifyPubkey2(t *testing.T) {
+	pubkey1, seckey := _GenerateKeyPair()
+	if _VerifyPubkey(pubkey1) == 0 {
 		t.Fail()
 	}
-	pubkey2 := RecoverPubkey(msg, sig)
+	msg := RandByte(32)
+	sig := _Sign(msg, seckey)
+	if sig == nil {
+		t.Fatal("Signature is nil")
+	}
+	pubkey2 := _RecoverPubkey(msg, sig)
+
+	if pubkey2 == nil {
+		t.Fatal("Recovered pubkey is nil")
+	}
 	if bytes.Equal(pubkey1, pubkey2) == false {
 		t.Fatal("Recovered pubkey does not match")
 	}
 }
 
-func Test_verify_functions(t *testing.T) {
+func Test_verify_functions2(t *testing.T) {
 	pubkey, seckey, hash, sig := RandX()
-	if VerifySeckey(seckey) == 0 {
+	if _VerifySeckey(seckey) == 0 {
+		fmt.Printf("0")
 		t.Fail()
 	}
-	if VerifyPubkey(pubkey) == 0 {
+	if _VerifySeckey(seckey) == 0 {
+		fmt.Printf("1")
 		t.Fail()
 	}
-	if VerifySignature(hash, sig, pubkey) == 0 {
+	if _VerifyPubkey(pubkey) == 0 {
+		fmt.Printf("2")
+		t.Fail()
+	}
+	if _VerifySignature(hash, sig, pubkey) == 0 {
+		//fmt.Printf("3")
+		str := _SignatureErrorString(hash, sig, pubkey)
+		fmt.Printf("ERROR: %s\n", str)
 		t.Fail()
 	}
 	_ = sig
 }
 
-func Test_SignatureVerifySecKey(t *testing.T) {
-	pubkey, seckey := GenerateKeyPair()
-	if VerifySeckey(seckey) == 0 {
+func Test_SignatureVerifySecKey2(t *testing.T) {
+	pubkey, seckey := _GenerateKeyPair()
+	if _VerifySeckey(seckey) == 0 {
 		t.Fail()
 	}
-	if VerifyPubkey(pubkey) == 0 {
+	if _VerifyPubkey(pubkey) == 0 {
 		t.Fail()
 	}
 }
 
 //test size of messages
-func Test_Secp256_02s(t *testing.T) {
-	pubkey, seckey := GenerateKeyPair()
+func Test_Secp256_02s2(t *testing.T) {
+	pubkey, seckey := _GenerateKeyPair()
 	msg := RandByte(32)
-	sig := Sign(msg, seckey)
+	sig := _Sign(msg, seckey)
 	CompactSigTest(sig)
 	if sig == nil {
 		t.Fatal("Signature nil")
@@ -153,15 +169,15 @@ func Test_Secp256_02s(t *testing.T) {
 }
 
 //test signing message
-func Test_Secp256_02(t *testing.T) {
+func Test_Secp256_022(t *testing.T) {
 	pubkey1, seckey := GenerateKeyPair()
 	msg := RandByte(32)
-	sig := Sign(msg, seckey)
+	sig := _Sign(msg, seckey)
 	if sig == nil {
 		t.Fatal("Signature nil")
 	}
 
-	pubkey2 := RecoverPubkey(msg, sig)
+	pubkey2 := _RecoverPubkey(msg, sig)
 	if pubkey2 == nil {
 		t.Fatal("Recovered pubkey invalid")
 	}
@@ -176,20 +192,20 @@ func Test_Secp256_02(t *testing.T) {
 }
 
 //test pubkey recovery
-func Test_Secp256_02a(t *testing.T) {
-	pubkey1, seckey1 := GenerateKeyPair()
+func Test_Secp256_02a2(t *testing.T) {
+	pubkey1, seckey1 := _GenerateKeyPair()
 	msg := RandByte(32)
-	sig := Sign(msg, seckey1)
+	sig := _Sign(msg, seckey1)
 
 	if sig == nil {
 		t.Fatal("Signature nil")
 	}
-	ret := VerifySignature(msg, sig, pubkey1)
+	ret := _VerifySignature(msg, sig, pubkey1)
 	if ret != 1 {
 		t.Fatal("Signature invalid")
 	}
 
-	pubkey2 := RecoverPubkey(msg, sig)
+	pubkey2 := _RecoverPubkey(msg, sig)
 	if len(pubkey1) != len(pubkey2) {
 		t.Fatal()
 	}
@@ -204,15 +220,15 @@ func Test_Secp256_02a(t *testing.T) {
 }
 
 //test random messages for the same pub/private key
-func Test_Secp256_03(t *testing.T) {
+func Test_Secp256_032(t *testing.T) {
 	_, seckey := GenerateKeyPair()
 	for i := 0; i < TESTS; i++ {
 		msg := RandByte(32)
-		sig := Sign(msg, seckey)
+		sig := _Sign(msg, seckey)
 		CompactSigTest(sig)
 
 		sig[len(sig)-1] %= 4
-		pubkey2 := RecoverPubkey(msg, sig)
+		pubkey2 := _RecoverPubkey(msg, sig)
 		if pubkey2 == nil {
 			t.Fail()
 		}
@@ -220,17 +236,17 @@ func Test_Secp256_03(t *testing.T) {
 }
 
 //test random messages for different pub/private keys
-func Test_Secp256_04(t *testing.T) {
+func Test_Secp256_042(t *testing.T) {
 	for i := 0; i < TESTS; i++ {
-		pubkey1, seckey := GenerateKeyPair()
+		pubkey1, seckey := _GenerateKeyPair()
 		msg := RandByte(32)
-		sig := Sign(msg, seckey)
+		sig := _Sign(msg, seckey)
 		CompactSigTest(sig)
 
 		if sig[len(sig)-1] >= 4 {
 			t.Fail()
 		}
-		pubkey2 := RecoverPubkey(msg, sig)
+		pubkey2 := _RecoverPubkey(msg, sig)
 		if pubkey2 == nil {
 			t.Fail()
 		}
@@ -245,17 +261,17 @@ func Test_Secp256_04(t *testing.T) {
 //crashes:
 //	-SIPA look at this
 
-func randSig() []byte {
+func randSig2() []byte {
 	sig := RandByte(65)
 	sig[32] &= 0x70
 	sig[64] %= 4
 	return sig
 }
 
-func Test_Secp256_06a_alt0(t *testing.T) {
-	pubkey1, seckey := GenerateKeyPair()
+func Test_Secp256_06a_alt02(t *testing.T) {
+	pubkey1, seckey := _GenerateKeyPair()
 	msg := RandByte(32)
-	sig := Sign(msg, seckey)
+	sig := _Sign(msg, seckey)
 
 	if sig == nil {
 		t.Fail()
@@ -265,17 +281,17 @@ func Test_Secp256_06a_alt0(t *testing.T) {
 	}
 	for i := 0; i < TESTS; i++ {
 		sig = randSig()
-		pubkey2 := RecoverPubkey(msg, sig)
+		pubkey2 := _RecoverPubkey(msg, sig)
 
 		if bytes.Equal(pubkey1, pubkey2) == true {
 			t.Fail()
 		}
 
-		if pubkey2 != nil && VerifySignature(msg, sig, pubkey2) != 1 {
+		if pubkey2 != nil && _VerifySignature(msg, sig, pubkey2) != 1 {
 			t.Fail()
 		}
 
-		if VerifySignature(msg, sig, pubkey1) == 1 {
+		if _VerifySignature(msg, sig, pubkey1) == 1 {
 			t.Fail()
 		}
 	}
@@ -283,24 +299,24 @@ func Test_Secp256_06a_alt0(t *testing.T) {
 
 //test random messages against valid signature: should fail
 
-func Test_Secp256_06b(t *testing.T) {
-	pubkey1, seckey := GenerateKeyPair()
+func Test_Secp256_06b2(t *testing.T) {
+	pubkey1, seckey := _GenerateKeyPair()
 	msg := RandByte(32)
-	sig := Sign(msg, seckey)
+	sig := _Sign(msg, seckey)
 
 	fail_count := 0
 	for i := 0; i < TESTS; i++ {
 		msg = RandByte(32)
-		pubkey2 := RecoverPubkey(msg, sig)
+		pubkey2 := _RecoverPubkey(msg, sig)
 		if bytes.Equal(pubkey1, pubkey2) == true {
 			t.Fail()
 		}
 
-		if pubkey2 != nil && VerifySignature(msg, sig, pubkey2) != 1 {
+		if pubkey2 != nil && _VerifySignature(msg, sig, pubkey2) != 1 {
 			t.Fail()
 		}
 
-		if VerifySignature(msg, sig, pubkey1) == 1 {
+		if _VerifySignature(msg, sig, pubkey1) == 1 {
 			t.Fail()
 		}
 	}
@@ -313,11 +329,11 @@ func Test_Secp256_06b(t *testing.T) {
 	Deterministic Keypair Tests
 */
 
-func Test_Deterministic_Keypairs_00(t *testing.T) {
+func Test_Deterministic_Keypairs_002(t *testing.T) {
 	for i := 0; i < 64; i++ {
 		seed := RandByte(64)
-		_, pub1, sec1 := DeterministicKeyPairIterator(seed)
-		pub2, sec2 := GenerateDeterministicKeyPair(seed)
+		_, pub1, sec1 := _DeterministicKeyPairIterator(seed)
+		pub2, sec2 := _GenerateDeterministicKeyPair(seed)
 
 		if bytes.Equal(pub1, pub2) == false {
 			t.Fail()
@@ -328,11 +344,11 @@ func Test_Deterministic_Keypairs_00(t *testing.T) {
 	}
 }
 
-func Test_Deterministic_Keypairs_01(t *testing.T) {
+func Test_Deterministic_Keypairs_012(t *testing.T) {
 	for i := 0; i < 64; i++ {
 		seed := RandByte(32)
-		_, pub1, sec1 := DeterministicKeyPairIterator(seed)
-		pub2, sec2 := GenerateDeterministicKeyPair(seed)
+		_, pub1, sec1 := _DeterministicKeyPairIterator(seed)
+		pub2, sec2 := _GenerateDeterministicKeyPair(seed)
 
 		if bytes.Equal(pub1, pub2) == false {
 			t.Fail()
@@ -343,11 +359,11 @@ func Test_Deterministic_Keypairs_01(t *testing.T) {
 	}
 }
 
-func Test_Deterministic_Keypairs_02(t *testing.T) {
+func Test_Deterministic_Keypairs_022(t *testing.T) {
 	for i := 0; i < 64; i++ {
 		seed := RandByte(32)
-		_, pub1, sec1 := DeterministicKeyPairIterator(seed)
-		pub2, sec2 := GenerateDeterministicKeyPair(seed)
+		_, pub1, sec1 := _DeterministicKeyPairIterator(seed)
+		pub2, sec2 := _GenerateDeterministicKeyPair(seed)
 
 		if bytes.Equal(pub1, pub2) == false {
 			t.Fail()
@@ -358,7 +374,7 @@ func Test_Deterministic_Keypairs_02(t *testing.T) {
 	}
 }
 
-func Decode(str string) []byte {
+func Decode2(str string) []byte {
 	byt, err := hex.DecodeString(str)
 	if err != nil {
 		log.Panic()
@@ -366,7 +382,7 @@ func Decode(str string) []byte {
 	return byt
 }
 
-func Test_Deterministic_Keypairs_03(t *testing.T) {
+func Test_Deterministic_Keypairs_032(t *testing.T) {
 
 	//test vectors: seed, seckey
 	var test_array []string = []string{
@@ -392,14 +408,14 @@ func Test_Deterministic_Keypairs_03(t *testing.T) {
 		seed := []byte(test_array[2*i+0])
 		sec1 := Decode(test_array[2*i+1])
 
-		_, sec2 := GenerateDeterministicKeyPair(seed)
+		_, sec2 := _GenerateDeterministicKeyPair(seed)
 		if bytes.Equal(sec1, sec2) == false {
 			t.Fail()
 		}
 	}
 }
 
-func Test_DeterministicWallets1(t *testing.T) {
+func Test_DeterministicWallets12(t *testing.T) {
 
 	var test_array []string = []string{
 		"90c56f5b8d78a46fb4cddf6fd9c6d88d6d2d7b0ec35917c7dac12c03b04e444e", "94dd1a9de9ffd57b5516b8a7f090da67f142f7d22356fa5d1b894ee4d4fba95b",
@@ -421,16 +437,16 @@ func Test_DeterministicWallets1(t *testing.T) {
 	}
 
 	for i := 0; i < len(test_array)/2; i++ {
-		seed := Decode(test_array[2*i+0])                   //input
-		seckey1 := Decode(test_array[2*i+1])                //target
-		_, _, seckey2 := DeterministicKeyPairIterator(seed) //output
+		seed := Decode(test_array[2*i+0])                    //input
+		seckey1 := Decode(test_array[2*i+1])                 //target
+		_, _, seckey2 := _DeterministicKeyPairIterator(seed) //output
 		if bytes.Equal(seckey1, seckey2) == false {
 			t.Fail()
 		}
 	}
 }
 
-func Test_Secp256k1_Hash(t *testing.T) {
+func Test_Secp256k1_Hash2(t *testing.T) {
 
 	var test_array []string = []string{
 		"90c56f5b8d78a46fb4cddf6fd9c6d88d6d2d7b0ec35917c7dac12c03b04e444e", "a70c36286be722d8111e69e910ce4490005bbf9135b0ce8e7a59f84eee24b88b",
@@ -454,20 +470,20 @@ func Test_Secp256k1_Hash(t *testing.T) {
 	for i := 0; i < len(test_array)/2; i++ {
 		hash1 := Decode(test_array[2*i+0]) //input
 		hash2 := Decode(test_array[2*i+1]) //target
-		hash3 := Secp256k1Hash(hash1)      //output
+		hash3 := _Secp256k1Hash(hash1)     //output
 		if bytes.Equal(hash2, hash3) == false {
 			t.Fail()
 		}
 	}
 }
 
-func Test_Secp256k1_Equal(t *testing.T) {
+func Test_Secp256k1_Equal2(t *testing.T) {
 
 	for i := 0; i < 64; i++ {
 		seed := RandByte(128)
 
-		hash1 := Secp256k1Hash(seed)
-		hash2, _, _ := DeterministicKeyPairIterator(seed)
+		hash1 := _Secp256k1Hash(seed)
+		hash2, _, _ := _DeterministicKeyPairIterator(seed)
 
 		if bytes.Equal(hash1, hash2) == false {
 			t.Fail()
@@ -475,7 +491,7 @@ func Test_Secp256k1_Equal(t *testing.T) {
 	}
 }
 
-func Test_DeterministicWalletGeneration(t *testing.T) {
+func Test_DeterministicWalletGeneration2(t *testing.T) {
 	in := "8654a32fa120bfdb7ca02c487469070eba4b5a81b03763a2185fdf5afd756f3c"
 	sec_out := "10ba0325f1b8633ca463542950b5cd5f97753a9829ba23477c584e7aee9cfbd5"
 	pub_out := "0249964ac7e3fe1b2c182a2f10abe031784e374cc0c665a63bc76cc009a05bc7c6"
@@ -485,7 +501,7 @@ func Test_DeterministicWalletGeneration(t *testing.T) {
 	var seckey []byte
 
 	for i := 0; i < 1024; i++ {
-		seed, pubkey, seckey = DeterministicKeyPairIterator(seed)
+		seed, pubkey, seckey = _DeterministicKeyPairIterator(seed)
 	}
 
 	if bytes.Equal(seckey, Decode(sec_out)) == false {
@@ -497,13 +513,13 @@ func Test_DeterministicWalletGeneration(t *testing.T) {
 	}
 }
 
-func Test_ECDH(t *testing.T) {
+func Test_ECDH22(t *testing.T) {
 
-	pubkey1, seckey1 := GenerateKeyPair()
-	pubkey2, seckey2 := GenerateKeyPair()
+	pubkey1, seckey1 := _GenerateKeyPair()
+	pubkey2, seckey2 := _GenerateKeyPair()
 
-	puba := ECDH(pubkey1, seckey2)
-	pubb := ECDH(pubkey2, seckey1)
+	puba := _ECDH(pubkey1, seckey2)
+	pubb := _ECDH(pubkey2, seckey1)
 
 	if puba == nil {
 		t.Fail()
@@ -519,15 +535,15 @@ func Test_ECDH(t *testing.T) {
 
 }
 
-func Test_ECDH2(t *testing.T) {
+func Test_ECDH222(t *testing.T) {
 
 	for i := 0; i < 1024; i++ {
 
-		pubkey1, seckey1 := GenerateKeyPair()
-		pubkey2, seckey2 := GenerateKeyPair()
+		pubkey1, seckey1 := _GenerateKeyPair()
+		pubkey2, seckey2 := _GenerateKeyPair()
 
-		puba := ECDH(pubkey1, seckey2)
-		pubb := ECDH(pubkey2, seckey1)
+		puba := _ECDH(pubkey1, seckey2)
+		pubb := _ECDH(pubkey2, seckey1)
 
 		if puba == nil {
 			t.Fail()
@@ -541,8 +557,4 @@ func Test_ECDH2(t *testing.T) {
 			t.Fail()
 		}
 	}
-}
-
-func Test_det(t *testing.T) {
-
 }

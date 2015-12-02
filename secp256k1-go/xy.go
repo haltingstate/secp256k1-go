@@ -4,9 +4,8 @@ import (
 	"fmt"
 )
 
-
 type XY struct {
-	X, Y Field
+	X, Y     Field
 	Infinity bool
 }
 
@@ -15,47 +14,52 @@ func (ge *XY) Print(lab string) {
 		fmt.Println(lab + " - Infinity")
 		return
 	}
-	fmt.Println(lab + ".X:", ge.X.String())
-	fmt.Println(lab + ".Y:", ge.Y.String())
+	fmt.Println(lab+".X:", ge.X.String())
+	fmt.Println(lab+".Y:", ge.Y.String())
 }
 
+//edited
 func (elem *XY) ParsePubkey(pub []byte) bool {
 	if len(pub) == 33 && (pub[0] == 0x02 || pub[0] == 0x03) {
 		elem.X.SetB32(pub[1:33])
-		elem.SetXO(&elem.X, pub[0]==0x03)
-	} else if len(pub) == 65 && (pub[0] == 0x04 || pub[0] == 0x06 || pub[0] == 0x07) {
-		elem.X.SetB32(pub[1:33])
-		elem.Y.SetB32(pub[33:65])
-		if (pub[0] == 0x06 || pub[0] == 0x07) && elem.Y.IsOdd() != (pub[0] == 0x07) {
-			return false
-		}
+		elem.SetXO(&elem.X, pub[0] == 0x03)
 	} else {
 		return false
 	}
+
+	/*
+		 else if len(pub) == 65 && (pub[0] == 0x04 || pub[0] == 0x06 || pub[0] == 0x07) {
+			elem.X.SetB32(pub[1:33])
+			elem.Y.SetB32(pub[33:65])
+			if (pub[0] == 0x06 || pub[0] == 0x07) && elem.Y.IsOdd() != (pub[0] == 0x07) {
+				return false
+			}
+		}
+	*/
 	return true
 }
 
-
-// Returns serialized key in uncompressed format "<04> <X> <Y>"
-// ... or in compressed format: "<02> <X>", eventually "<03> <X>"
-func (pub *XY) Bytes(compressed bool) (raw []byte) {
-	if compressed {
-		raw = make([]byte, 33)
-		if pub.Y.IsOdd() {
-			raw[0] = 0x03
-		} else {
-			raw[0] = 0x02
-		}
-		pub.X.GetB32(raw[1:])
+// Returns serialized key in in compressed format: "<02> <X>",
+// eventually "<03> <X>"
+func (pub *XY) Bytes() (raw []byte) {
+	raw = make([]byte, 33)
+	if pub.Y.IsOdd() {
+		raw[0] = 0x03
 	} else {
-		raw = make([]byte, 65)
-		raw[0] = 0x04
-		pub.X.GetB32(raw[1:33])
-		pub.Y.GetB32(raw[33:65])
+		raw[0] = 0x02
 	}
+	pub.X.GetB32(raw[1:])
 	return
 }
 
+// Returns serialized key in uncompressed format "<04> <X> <Y>"
+func (pub *XY) BytesUncompressed() (raw []byte) {
+	raw = make([]byte, 65)
+	raw[0] = 0x04
+	pub.X.GetB32(raw[1:33])
+	pub.Y.GetB32(raw[33:65])
+	return
+}
 
 func (r *XY) SetXY(X, Y *Field) {
 	r.Infinity = false
@@ -63,14 +67,14 @@ func (r *XY) SetXY(X, Y *Field) {
 	r.Y = *Y
 }
 
-
 func (a *XY) IsValid() bool {
 	if a.Infinity {
 		return false
 	}
 	var y2, x3, c Field
 	a.Y.Sqr(&y2)
-	a.X.Sqr(&x3); x3.Mul(&x3, &a.X)
+	a.X.Sqr(&x3)
+	x3.Mul(&x3, &a.X)
 	c.SetInt(7)
 	x3.SetAdd(&c)
 	y2.Normalize()
@@ -78,9 +82,8 @@ func (a *XY) IsValid() bool {
 	return y2.Equals(&x3)
 }
 
-
 func (r *XY) SetXYZ(a *XYZ) {
-	var z2, z3 Field;
+	var z2, z3 Field
 	a.Z.InvVar(&a.Z)
 	a.Z.Sqr(&z2)
 	a.Z.Mul(&z3, &z2)
@@ -93,12 +96,12 @@ func (r *XY) SetXYZ(a *XYZ) {
 }
 
 func (a *XY) precomp(w int) (pre []XY) {
-	pre = make([]XY, (1 << (uint(w)-2)))
-	pre[0] = *a;
+	pre = make([]XY, (1 << (uint(w) - 2)))
+	pre[0] = *a
 	var X, d, tmp XYZ
 	X.SetXY(a)
 	X.Double(&d)
-	for i:=1 ; i<len(pre); i++ {
+	for i := 1; i < len(pre); i++ {
 		d.AddXY(&tmp, &pre[i-1])
 		pre[i].SetXYZ(&tmp)
 	}
@@ -112,7 +115,6 @@ func (a *XY) Neg(r *XY) {
 	r.Y.Normalize()
 	r.Y.Negate(&r.Y, 1)
 }
-
 
 func (r *XY) SetXO(X *Field, odd bool) {
 	var c, x2, x3 Field
@@ -129,7 +131,6 @@ func (r *XY) SetXO(X *Field, odd bool) {
 	r.Y.Normalize()
 }
 
-
 func (pk *XY) AddXY(a *XY) {
 	var xyz XYZ
 	xyz.SetXY(pk)
@@ -137,10 +138,9 @@ func (pk *XY) AddXY(a *XY) {
 	pk.SetXYZ(&xyz)
 }
 
-
 func (pk *XY) GetPublicKey(out []byte) {
 	pk.X.GetB32(out[1:33])
-	if len(out)==65 {
+	if len(out) == 65 {
 		out[0] = 0x04
 		pk.Y.GetB32(out[33:65])
 	} else {
