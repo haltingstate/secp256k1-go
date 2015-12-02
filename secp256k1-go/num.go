@@ -18,6 +18,10 @@ func (a *Number) Print(label string) {
 	fmt.Println(label, hex.EncodeToString(a.Bytes()))
 }
 
+func (a *Number) Bytes() []byte {
+	return a.Bytes()
+}
+
 func (r *Number) mod_mul(a, b, m *Number) {
 	r.Mul(&a.Int, &b.Int)
 	r.Mod(&r.Int, &m.Int)
