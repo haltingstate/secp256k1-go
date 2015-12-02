@@ -106,7 +106,7 @@ func BaseMultiply(k, out []byte) bool {
 func _GenerateKeyPair() ([]byte, []byte) {
 
 	const seckey_len = 32
-new_seckey:
+	//new_seckey:
 
 	var seckey []byte = RandByte(seckey_len)
 	//var seckey_ptr secp.Number = secp.Number.SetBytes(seckey)
@@ -168,9 +168,9 @@ new_seckey:
 }
 
 //returns nil on error
-func _PubkeyFromSeckey(SecKey []byte) []byte {
+func _PubkeyFromSeckey(seckey []byte) []byte {
 
-	if len(SecKey) != 32 {
+	if len(seckey) != 32 {
 		log.Panic("PubkeyFromSeckey: invalid length")
 	}
 
@@ -223,9 +223,9 @@ func _PubkeyFromSeckey(SecKey []byte) []byte {
 }
 
 //returns nil on error
-func _UncompressedPubkeyFromSeckey(SecKey []byte) []byte {
+func _UncompressedPubkeyFromSeckey(seckey []byte) []byte {
 
-	if len(SecKey) != 32 {
+	if len(seckey) != 32 {
 		log.Panic("PubkeyFromSeckey: invalid length")
 	}
 
@@ -248,7 +248,7 @@ func _UncompressedPubkeyFromSeckey(SecKey []byte) []byte {
 		log.Panic("ERror: impossible, pubkey not valid")
 	}
 
-	pubkey2 = pub_xy.Bytes(false) //uncompressed
+	var pubkey2 []byte = pub_xy.Bytes(false) //uncompressed
 	if pubkey2 == nil {
 		log.Panic("ERROR: pubkey uncompsesion fail")
 	}
@@ -290,7 +290,7 @@ func _generateDeterministicKeyPair(seed []byte) ([]byte, []byte) {
 		log.Panic()
 	}
 
-	pubkey_len := C.int(33)
+	const pubkey_len = 33
 	const seckey_len = 32
 
 	var pubkey []byte = make([]byte, pubkey_len)
@@ -395,9 +395,9 @@ func _Sign(msg []byte, seckey []byte) []byte {
 
 	seckey1.SetBytes(seckey)
 	msg1.SetBytes(msg)
-	nonce1.SetBytes(nonce_seed)
+	nonce1.SetBytes(nonce)
 
-	ret := cSig.Sign(&seckey1, &message1, &nonce1, &recid)
+	ret := cSig.Sign(&seckey1, &msg1, &nonce1, &recid)
 
 	sig[64] = byte(int(recid))
 
@@ -447,7 +447,7 @@ func _Sign(msg []byte, seckey []byte) []byte {
 
 //generate signature in repeatable way
 func _SignDeterministic(msg []byte, seckey []byte, nonce_seed []byte) []byte {
-	nonce := SumSHA256(nonce_seed) //deterministicly generate nonce
+	nonce_seed2 := SumSHA256(nonce_seed) //deterministicly generate nonce
 
 	var sig []byte = make([]byte, 65)
 	var recid int
@@ -460,9 +460,9 @@ func _SignDeterministic(msg []byte, seckey []byte, nonce_seed []byte) []byte {
 
 	seckey1.SetBytes(seckey)
 	msg1.SetBytes(msg)
-	nonce1.SetBytes(nonce_seed)
+	nonce1.SetBytes(nonce_seed2)
 
-	ret := cSig.Sign(&seckey1, &message1, &nonce1, &recid)
+	ret := cSig.Sign(&seckey1, &msg1, &nonce1, &recid)
 
 	sig[64] = byte(int(recid))
 
@@ -682,7 +682,7 @@ func _RecoverPubkey(msg []byte, sig []byte) []byte {
 	var recid int = int(sig[64])
 	var msg1 secp.Number
 
-	var pubkey1 XY
+	var pubkey1 secp.XY
 
 	msg1.SetBytes(msg)
 	//sig1.SetBytes(sig)
@@ -694,7 +694,7 @@ func _RecoverPubkey(msg []byte, sig []byte) []byte {
 		return nil
 	}
 
-	err := secp1.RecoverPublicKey(
+	err := secp.RecoverPublicKey(
 		sig1.R.Bytes(),
 		sig1.S.Bytes(),
 		msg,
@@ -705,13 +705,13 @@ func _RecoverPubkey(msg []byte, sig []byte) []byte {
 		return nil
 	}
 
-	var pubkey2 []byte = pubkey1.Bytes(1) //compressed
+	var pubkey2 []byte = pubkey1.Bytes(true) //compressed
 
 	if len(pubkey2) != 33 {
 		log.Panic("pubkey length wrong")
 	}
 
-	return pubkeys2
+	return pubkey2
 	//nonce1.SetBytes(nonce_seed)
 
 }
