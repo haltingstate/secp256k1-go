@@ -228,6 +228,7 @@ func GenerateDeterministicKeyPair(seed []byte) ([]byte, []byte) {
 
 //Iterator for deterministic keypair generation. Returns SHA256, Pubkey, Seckey
 //Feed SHA256 back into function to generate sequence of seckeys
+//If private key is diclosed, should not be able to compute future or past keys in sequence
 func DeterministicKeyPairIterator(seed_in []byte) ([]byte, []byte, []byte) {
 	seed1 := Secp256k1Hash(seed_in) //make it difficult to derive future seckeys from previous seckeys
 	seed2 := SumSHA256(append(seed_in, seed1...))
