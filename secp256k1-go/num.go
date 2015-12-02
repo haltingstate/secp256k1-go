@@ -18,10 +18,6 @@ func (a *Number) Print(label string) {
 	fmt.Println(label, hex.EncodeToString(a.Bytes()))
 }
 
-func (a *Number) Bytes() []byte {
-	return a.Bytes()
-}
-
 func (r *Number) mod_mul(a, b, m *Number) {
 	r.Mul(&a.Int, &b.Int)
 	r.Mod(&r.Int, &m.Int)
@@ -42,10 +38,11 @@ func (a *Number) SetHex(s string) {
 	a.SetString(s, 16)
 }
 
+//SetBytes and GetBytes are inherited by default
 //added
-func (a *Number) SetBytes(b []byte) {
-	a.SetBytes(b)
-}
+//func (a *Number) SetBytes(b []byte) {
+//	a.SetBytes(b)
+//}
 
 func (num *Number) mask_bits(bits uint) {
 	mask := new(big.Int).Lsh(BigInt1, bits)
