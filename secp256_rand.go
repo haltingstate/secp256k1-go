@@ -24,6 +24,18 @@ func SumSHA256(b []byte) []byte {
 	return sum[:]
 }
 
+/*
+Entropy pool needs
+- state (an array of bytes)
+- a compression function (two 256 bit blocks to single block)
+- a mixing function across the pool
+
+- Xor is safe, as it cannot make value less random
+-- apply compression function, then xor with current value
+--
+
+*/
+
 type EntropyPool struct {
 	Ent [32]byte //256 bit accumulator
 
@@ -81,28 +93,6 @@ Should allow pseudo-random mode for repeatability for certain types of tests
 
 */
 
-/*
-//finalizer from MurmerHash3
-func mmh3f(key uint64) uint64 {
-	key ^= key >> 33
-	key *= 0xff51afd7ed558ccd
-	key ^= key >> 33
-	key *= 0xc4ceb9fe1a85ec53
-	key ^= key >> 33
-	return key
-}
-
-//knuth hash
-func knuth_hash(in []byte) uint64 {
-	var acc uint64 = 3074457345618258791
-	for i := 0; i < len(in); i++ {
-		acc += uint64(in[i])
-		acc *= 3074457345618258799
-	}
-	return acc
-}
-*/
-
 //var _rand *mrand.Rand //pseudorandom number generator
 var _ent EntropyPool
 
@@ -126,23 +116,6 @@ func init() {
 	_ent.Mix256(seed4)
 }
 
-//generate pseudo-random numbers from the
-/*
-func saltByte(n int) []byte {
-	buff := make([]byte, n)
-	for i := 0; i < len(buff); i++ {
-		var v uint64 = uint64(_rand.Int63())
-		var b byte
-		for j := 0; j < 8; j++ {
-			b ^= byte(v & 0xff)
-			v = v >> 8
-		}
-		buff[i] = b
-	}
-	return buff
-}
-*/
-
 //Secure Random number generator for forwards security
 //On Unix-like systems, Reader reads from /dev/urandom.
 //On Windows systems, Reader uses the CryptGenRandom API.
@@ -155,24 +128,10 @@ func RandByte(n int) []byte {
 		log.Panic()
 	}
 
-	//XORing in sequence, cannot reduce security
+	//XORing in sequence, cannot reduce security (even if sequence is bad/known/non-random)
 	buff2 := _ent.Mix(buff)
 	for i := 0; i < n; i++ {
 		buff[i] ^= buff2[i]
 	}
 	return buff
 }
-
-//System "secure" random number generator
-//On Unix-like systems, Reader reads from /dev/urandom.
-//On Windows systems, Reader uses the CryptGenRandom API.
-/*
-func RandByteSystem(n int) []byte {
-	buff := make([]byte, n)
-	ret, err := io.ReadFull(crand.Reader, buff) //system secure random number generator
-	if len(buff) != ret || err != nil {
-		log.Panic()
-	}
-	return buff
-}
-*/
