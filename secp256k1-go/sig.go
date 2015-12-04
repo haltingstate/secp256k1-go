@@ -5,6 +5,9 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log"
+
+	//"bytes"
+	//"math/big"
 )
 
 type Signature struct {
@@ -127,6 +130,7 @@ func (sig *Signature) Sign(seckey, message, nonce *Number, recid *int) int {
 }
 
 /*
+//uncompressed Signature Parsing in DER
 func (r *Signature) ParseBytes(sig []byte) int {
 	if sig[0] != 0x30 || len(sig) < 5 {
 		return -1
@@ -149,6 +153,7 @@ func (r *Signature) ParseBytes(sig []byte) int {
 */
 
 /*
+//uncompressed Signature parsing in DER
 func (sig *Signature) Bytes() []byte {
 	r := sig.R.Bytes()
 	if r[0] >= 0x80 {
@@ -171,15 +176,20 @@ func (sig *Signature) Bytes() []byte {
 }
 */
 
+//compressed signature parsing
 func (r *Signature) ParseBytes(sig []byte) int {
 	r.R.SetBytes(sig[0:32])
 	r.S.SetBytes(sig[32:64])
 	return 64
 }
 
+//secp256k1_num_get_bin(sig64, 32, &sig.r);
+//secp256k1_num_get_bin(sig64 + 32, 32, &sig.s);
+
+//compressed signature parsing
 func (sig *Signature) Bytes() []byte {
-	r := sig.R.Bytes()
-	s := sig.S.Bytes()
+	r := sig.R.Bytes() //endianess
+	s := sig.S.Bytes() //endianess
 
 	for len(r) < 32 {
 		r = append([]byte{0}, r...)
@@ -195,5 +205,18 @@ func (sig *Signature) Bytes() []byte {
 	res := new(bytes.Buffer)
 	res.Write(r)
 	res.Write(s)
+
+	//test
+	if true {
+		ret := res.Bytes()
+		var sig2 Signature
+		sig2.ParseBytes(ret)
+		if bytes.Equal(sig.R.Bytes(), sig2.R.Bytes()) == false {
+			log.Panic("serialization failed 1")
+		}
+		if bytes.Equal(sig.S.Bytes(), sig2.S.Bytes()) == false {
+			log.Panic("serialization failed 2")
+		}
+	}
 	return res.Bytes()
 }

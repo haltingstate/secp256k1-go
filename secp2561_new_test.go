@@ -85,7 +85,7 @@ func Test_UncompressedPubkeyFromSeckey2(t *testing.T) {
 }
 
 //returns random pubkey, seckey, hash and signature
-func RandX2() ([]byte, []byte, []byte, []byte) {
+func _RandX() ([]byte, []byte, []byte, []byte) {
 	pubkey, seckey := _GenerateKeyPair()
 	msg := RandByte(32)
 	sig := _Sign(msg, seckey)
@@ -100,37 +100,36 @@ func Test_SignatureVerifyPubkey2(t *testing.T) {
 	msg := RandByte(32)
 	sig := _Sign(msg, seckey)
 	if sig == nil {
-		t.Fatal("Signature is nil")
+		//t.Fail()
+		t.Error("Signature is nil")
 	}
 	pubkey2 := _RecoverPubkey(msg, sig)
 
 	if pubkey2 == nil {
-		t.Fatal("Recovered pubkey is nil")
+		//t.Fail()
+		t.Error("Recovered pubkey is nil")
 	}
 	if bytes.Equal(pubkey1, pubkey2) == false {
-		t.Fatal("Recovered pubkey does not match")
+		//t.Fail()
+		t.Error("Recovered pubkey does not match")
 	}
 }
 
 func Test_verify_functions2(t *testing.T) {
-	pubkey, seckey, hash, sig := RandX()
+	pubkey, seckey, hash, sig := _RandX()
 	if _VerifySeckey(seckey) == 0 {
-		fmt.Printf("0")
-		t.Fail()
+		t.Error("")
 	}
 	if _VerifySeckey(seckey) == 0 {
-		fmt.Printf("1")
-		t.Fail()
+		t.Error("1")
 	}
 	if _VerifyPubkey(pubkey) == 0 {
-		fmt.Printf("2")
-		t.Fail()
+		t.Error("2")
 	}
 	if _VerifySignature(hash, sig, pubkey) == 0 {
 		//fmt.Printf("3")
 		str := _SignatureErrorString(hash, sig, pubkey)
-		fmt.Printf("ERROR: %s\n", str)
-		t.Fail()
+		t.Error("ERROR: %s\n", str)
 	}
 	_ = sig
 }
@@ -546,6 +545,79 @@ func Test_ECDH222(t *testing.T) {
 		pubb := _ECDH(pubkey2, seckey1)
 
 		if puba == nil {
+			t.Fatal("puba is nil")
+			//t.Fail()
+		}
+
+		if pubb == nil {
+			t.Fatal("pubb is nil")
+			//t.Fail()
+		}
+
+		if bytes.Equal(puba, pubb) == false {
+			t.Fatal("puba and pubb not equal")
+			//t.Fail()
+		}
+	}
+}
+
+//returns random pubkey, seckey, hash and signature
+func Test_Interop_sigs(t *testing.T) {
+
+	for i := 0; i < 1024; i++ {
+		seed := RandByte(32)
+		msg := RandByte(32)
+		nonce := RandByte(32)
+
+		pubkey1, seckey1 := _GenerateDeterministicKeyPair(seed)
+		sig1 := _SignDeterministic(msg, seckey1, nonce)
+		//return pubkey, seckey, msg, sig
+
+		pubkey2, seckey2 := GenerateDeterministicKeyPair(seed)
+		sig2 := _SignDeterministic(msg, seckey2, nonce)
+
+		if sig1 == nil {
+			t.Fatal("signature1 is nil")
+		}
+		if pubkey1 == nil {
+			t.Fatal("pubkey1 is nil")
+		}
+		if sig2 == nil {
+			t.Fatal("signature2 is nil")
+		}
+		if pubkey2 == nil {
+			t.Fatal("pubkey2 is nil")
+		}
+
+		if bytes.Equal(seckey1, seckey2) == false {
+			t.Fatal("seckeys not equal")
+			//t.Fail()
+		}
+		if bytes.Equal(pubkey1, pubkey2) == false {
+			t.Fatal("pubkeys not equal")
+			//t.Fail()
+		}
+		if bytes.Equal(sig1, sig2) == false {
+			t.Fatal("signatures not equal")
+			//t.Fail()
+		}
+	}
+}
+
+func Test_ECDH_interop(t *testing.T) {
+
+	for i := 0; i < 1024; i++ {
+
+		seed1 := RandByte(32)
+		seed2 := RandByte(32)
+
+		pubkey1, seckey1 := _GenerateDeterministicKeyPair(seed1)
+		pubkey2, seckey2 := GenerateDeterministicKeyPair(seed2)
+
+		puba := _ECDH(pubkey1, seckey2)
+		pubb := ECDH(pubkey2, seckey1)
+
+		if puba == nil {
 			t.Fail()
 		}
 
@@ -555,6 +627,88 @@ func Test_ECDH222(t *testing.T) {
 
 		if bytes.Equal(puba, pubb) == false {
 			t.Fail()
+		}
+	}
+}
+
+func Test_Keygen(t *testing.T) {
+
+	for i := 0; i < 4096; i++ {
+
+		seed1 := RandByte(32)
+
+		pubkey1, seckey1 := _GenerateDeterministicKeyPair(seed1)
+
+		if seckey1 == nil {
+			t.Fatal("seckey is nil")
+		}
+		if pubkey1 == nil {
+			t.Fatal("pubkey is nil")
+		}
+		if _VerifyPubkey(pubkey1) != 1 {
+			t.Fatal("pubkey invalid, impossible")
+		}
+	}
+}
+
+//returns random pubkey, seckey, hash and signature
+func Test_signature_recovery(t *testing.T) {
+
+	for i := 0; i < 1024; i++ {
+		seed := RandByte(32)
+		msg := RandByte(32)
+		nonce := RandByte(32)
+
+		//use new generator
+		pubkey1, seckey1 := _GenerateDeterministicKeyPair(seed)
+		sig1 := _SignDeterministic(msg, seckey1, nonce)
+
+		//use old generator
+		pubkey2, seckey2 := GenerateDeterministicKeyPair(seed)
+		sig2 := SignDeterministic(msg, seckey2, nonce)
+
+		if sig1 == nil {
+			t.Fatal("signature1 is nil")
+		}
+		if pubkey1 == nil {
+			t.Fatal("pubkey1 is nil")
+		}
+		if sig2 == nil {
+			t.Fatal("signature2 is nil")
+		}
+		if pubkey2 == nil {
+			t.Fatal("pubkey2 is nil")
+		}
+
+		if bytes.Equal(seckey1, seckey2) == false {
+			t.Fatal("seckeys not equal")
+			//t.Fail()
+		}
+		if bytes.Equal(pubkey1, pubkey2) == false {
+			t.Fatal("pubkeys not equal")
+			//t.Fail()
+		}
+		if bytes.Equal(sig1, sig2) == false {
+			t.Fatal("signatures not equal")
+			//t.Fail()
+		}
+		//test signature recovery
+		rec_pub1 := _RecoverPubkey(msg, sig1)
+		rec_pub2 := RecoverPubkey(msg, sig2)
+		if rec_pub1 == nil {
+			t.Fatal("recovered public key 1 is null")
+		}
+		if bytes.Equal(rec_pub1, pubkey1) == false {
+			t.Fatal("recovered pubkey 1 wrong")
+		}
+		if bytes.Equal(rec_pub2, pubkey2) == false {
+			t.Fatal("recovered pubkey 2 wrong")
+		}
+		if bytes.Equal(rec_pub1, rec_pub2) == false {
+			t.Fatal("recovered pubkeys do not match")
+		}
+		if rec_pub2 == nil {
+			t.Fatal("recovered public key 2 is wrong")
 		}
 	}
 }

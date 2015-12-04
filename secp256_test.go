@@ -8,8 +8,8 @@ import (
 	"testing"
 )
 
-const TESTS = 10000 // how many tests
-const SigSize = 65  //64+1
+const TESTS = 1    //10000 // how many tests
+const SigSize = 65 //64+1
 
 func Test_Secp256_00(t *testing.T) {
 

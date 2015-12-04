@@ -2,3 +2,4 @@ Implementation of this package has been based on source code created by Pieter W
 
  * https://github.com/bitcoin/secp256k1
 
+Modified by HaltingState

@@ -45,6 +45,33 @@ func DecompressPoint(X []byte, off bool, Y []byte) {
 	return
 }
 
+func RecoverPublicKey2(sig Signature, h []byte, recid int, pubkey *XY) int {
+	//var sig Signature
+	var msg Number
+
+	if sig.R.Sign() <= 0 || sig.R.Cmp(&TheCurve.Order.Int) >= 0 {
+		if sig.R.Sign() == 0 {
+			return -10
+		}
+		if sig.R.Sign() <= 0 {
+			return -11
+		}
+		if sig.R.Cmp(&TheCurve.Order.Int) >= 0 {
+			return -12
+		}
+		return -1
+	}
+	if sig.S.Sign() <= 0 || sig.S.Cmp(&TheCurve.Order.Int) >= 0 {
+		return -2
+	}
+
+	msg.SetBytes(h)
+	if !sig.Recover(pubkey, &msg, recid) {
+		return -3
+	}
+	return 1
+}
+
 func RecoverPublicKey(r, s, h []byte, recid int, pubkey *XY) bool {
 	var sig Signature
 	var msg Number

@@ -129,6 +129,7 @@ func RandByte(n int) []byte {
 	}
 
 	//XORing in sequence, cannot reduce security (even if sequence is bad/known/non-random)
+
 	buff2 := _ent.Mix(buff)
 	for i := 0; i < n; i++ {
 		buff[i] ^= buff2[i]
