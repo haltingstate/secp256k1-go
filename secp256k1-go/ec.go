@@ -138,12 +138,12 @@ func BaseMultiplyAdd(xy, k, out []byte) bool {
 }
 
 //returns 1 on success
-func PubkeyIsValid(pubkey []byte) int 
+func PubkeyIsValid(pubkey []byte) int {
 
 	var pub_test XY
 	err := pub_test.ParsePubkey(pubkey)
 	if err == false {
-		log.Panic("PubkeyIsValid, ERROR: pubkey parse fail, bad pubkey from private key")
+		//log.Panic("PubkeyIsValid, ERROR: pubkey parse fail, bad pubkey from private key")
 		return -1
 	}
 
