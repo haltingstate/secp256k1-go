@@ -713,14 +713,14 @@ func Test_signature_recovery(t *testing.T) {
 	}
 }
 
-func TestSecp256k1_hash {
-for i:=0;i<4096;i++ {
-	seed := RandByte(32)
-	hash1 := _Secp256k1Hash(seed)
-	hash2 := Secp256k1Hash(seed)
-	if bytes.Equal(hash1, hash2) == false {
-		t.Fatal("secp256k1 hashes do not match")
-	}
+func TestSecp256k1_hash(t *testing.T) {
+	for i := 0; i < 4096; i++ {
+		seed := RandByte(32)
+		hash1 := _Secp256k1Hash(seed)
+		hash2 := Secp256k1Hash(seed)
+		if bytes.Equal(hash1, hash2) == false {
+			t.Fatal("secp256k1 hashes do not match")
+		}
 
 	}
 }

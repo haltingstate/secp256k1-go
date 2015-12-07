@@ -16,20 +16,26 @@ func _pubkeyFromSeckey(seckey []byte) []byte {
 		log.Panic("seckey length invalid")
 	}
 
-	err := secp.BaseMultiply(seckey, pubkey) //always returns true
-	if err == false {
+	var pubkey []byte = secp.BaseMultiply(seckey) //always returns true
+	if pubkey == nil {
 		log.Panic("ERROR: impossible, secp.BaseMultiply always returns true")
+		return nil
 	}
-	if _VerifyPubkey(pubkey) == false {
+	if _VerifyPubkey(pubkey) != 1 {
 		log.Panic("ERROR: pubkey verification failed, for deterministic")
+		return nil
 	}
 
 	if ret := secp.PubkeyIsValid(pubkey); ret != 1 {
 		log.Panic("ERROR: pubkey invald, ret=%s", ret)
+		return nil
 	}
+
+	return pubkey
 }
 
 func _GenerateKeyPair() ([]byte, []byte) {
+	const seckey_len = 32
 
 new_seckey:
 	var seckey []byte = RandByte(seckey_len)
@@ -57,6 +63,8 @@ new_seckey:
 
 //must succeed
 func _PubkeyFromSeckey(seckey []byte) []byte {
+	//const pubkey_len = 33
+	//var pubkey []byte = make([]byte, pubkey_len)
 
 	if len(seckey) != 32 {
 		log.Panic("PubkeyFromSeckey: invalid length")
@@ -73,8 +81,8 @@ func _PubkeyFromSeckey(seckey []byte) []byte {
 	}
 
 	/*
-		err := secp.BaseMultiply(seckey, pubkey) //always returns true
-		if err != true {
+		pubkey := secp.BaseMultiply(seckey) //always returns true
+		if pubkey == nil {
 			log.Panic("ERROR: impossible, BaseMultiple return false")
 		}
 		if pub_test.IsValid() == false {
@@ -91,9 +99,15 @@ func _PubkeyFromSeckey(seckey []byte) []byte {
 }
 
 func _UncompressPubkey(pubkey []byte) []byte {
-	if _VerifyPubkey(pubkey) == false {
+	if _VerifyPubkey(pubkey) != 1 {
 		log.Panic("cannot uncompress invalid pubkey")
 		return nil
+	}
+
+	var pub_xy secp.XY
+	err := pub_xy.ParsePubkey(pubkey)
+	if err == false {
+		log.Panic("ERROR: impossible, pubkey parse fail")
 	}
 
 	var pubkey2 []byte = pub_xy.BytesUncompressed() //uncompressed
@@ -114,13 +128,13 @@ func _UncompressedPubkeyFromSeckey(seckey []byte) []byte {
 		log.Panic("PubkeyFromSeckey: invalid length")
 	}
 
-	pubkey = _PubkeyFromSeckey(seckey)
+	pubkey := _PubkeyFromSeckey(seckey)
 	if pubkey == nil {
 		log.Panic("Generating seckey from pubkey, failed")
 		return nil
 	}
 
-	if _VerifyPubkey(pubkey) == false {
+	if _VerifyPubkey(pubkey) != 1 {
 		log.Panic("ERROR: impossible, Pubkey generation succeeded but pubkey validation failed")
 	}
 
@@ -144,22 +158,22 @@ func _generateDeterministicKeyPair(seed []byte) ([]byte, []byte) {
 		log.Panic()
 	}
 
-	const pubkey_len = 33
+	//const pubkey_len = 33
 	const seckey_len = 32
 
-	var pubkey []byte = make([]byte, pubkey_len)
+	//var pubkey []byte = make([]byte, pubkey_len)
 	var seckey []byte = make([]byte, seckey_len)
 
 new_seckey:
 	seed = SumSHA256(seed[0:32])
 	copy(seckey[0:32], seed[0:32])
 
-	err := secp.BaseMultiply(seckey, pubkey) //always returns true
-	if err == false {
+	pubkey := secp.BaseMultiply(seckey) //always returns true
+	if pubkey == nil {
 		log.Panic("ERROR: impossible, secp.BaseMultiply always returns true")
 		goto new_seckey
 	}
-	if _VerifyPubkey(pubkey) == false {
+	if _VerifyPubkey(pubkey) != 1 {
 		log.Panic("ERROR: pubkey is invalid, for deterministic")
 		goto new_seckey
 	}

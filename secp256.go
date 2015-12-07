@@ -56,6 +56,18 @@ int secp256k1_ecdsa_pubkey_create(
     const unsigned char *seckey, int compressed);
 */
 
+/*
+int secp256k1_ecdsa_seckey_verify(const unsigned char *seckey) {
+    secp256k1_num_t sec;
+    secp256k1_num_init(&sec);
+    secp256k1_num_set_bin(&sec, seckey, 32);
+    int ret = !secp256k1_num_is_zero(&sec) &&
+              (secp256k1_num_cmp(&sec, &secp256k1_ge_consts->order) < 0);
+    secp256k1_num_free(&sec);
+    return ret;
+}
+*/
+
 /** Compute the public key for a secret key.
  *  In:     compressed: whether the computed public key should be compressed
  *          seckey:     pointer to a 32-byte private key.
@@ -83,6 +95,7 @@ new_seckey:
 	var seckey []byte = RandByte(seckey_len)
 	var seckey_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&seckey[0]))
 
+	//must be less than order of curve
 	ret = C.secp256k1_ecdsa_seckey_verify(seckey_ptr)
 
 	if ret != 1 {
