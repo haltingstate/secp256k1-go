@@ -2,6 +2,7 @@ package secp256k1
 
 import (
 	//"encoding/hex"
+	"bytes"
 	"log"
 )
 
@@ -97,55 +98,54 @@ func RecoverPublicKey(r, s, h []byte, recid int, pubkey *XY) bool {
 // xy - is the standarized public key format (33 or 65 bytes long)
 // out - should be the buffer for 33 bytes (1st byte will be set to either 02 or 03)
 // TODO: change out to return type
-func Multiply(xy, k, out []byte) bool {
+func Multiply(xy, k []byte) []byte {
 	var pk XY
 	var xyz XYZ
 	var na, nzero Number
 	if !pk.ParsePubkey(xy) {
-		return false
+		return nil
 	}
 	xyz.SetXY(&pk)
 	na.SetBytes(k)
 	xyz.ECmult(&xyz, &na, &nzero)
 	pk.SetXYZ(&xyz)
-	pk.GetPublicKey(out)
-	return true
+	return pk.GetPublicKey()
 }
 
 // Multiply k by G
 // returns public key
-// out - should be the buffer for 33 bytes (1st byte will be set to either 02 or 03)
 // return nil on error, but never returns nil
+// 33 bytes out
 func BaseMultiply(k []byte) []byte {
-	var out []byte = make([]byte, 33)
 	var r XYZ
 	var n Number
 	var pk XY
 	n.SetBytes(k)
 	ECmultGen(&r, &n)
 	pk.SetXYZ(&r)
-	pk.GetPublicKey(out)
-	return out
+	return pk.GetPublicKey()
 }
 
 // out = G*k + xy
 // TODO: switch to returning output as []byte
-func BaseMultiplyAdd(xy, k, out []byte) bool {
+// nil on error
+// 33 byte out
+func BaseMultiplyAdd(xy, k []byte) []byte {
 	var r XYZ
 	var n Number
 	var pk XY
 	if !pk.ParsePubkey(xy) {
-		return false
+		return nil
 	}
 	n.SetBytes(k)
 	ECmultGen(&r, &n)
 	r.AddXY(&r, &pk)
 	pk.SetXYZ(&r)
-	pk.GetPublicKey(out)
-	return true
+	return pk.GetPublicKey()
 }
 
 //returns nil on failure
+//crash rather than fail
 func GeneratePublicKey(k []byte) []byte {
 	if len(k) != 32 {
 		log.Panic()
@@ -153,18 +153,18 @@ func GeneratePublicKey(k []byte) []byte {
 	var r XYZ
 	var n Number
 	var pk XY
-	var out []byte
+
 	//must not be zero
 	//must not be negative
 	//must be less than order of curve
 	n.SetBytes(k)
 	if n.Sign() <= 0 || n.Cmp(&TheCurve.Order.Int) >= 0 {
+		log.Panic("only call for valid seckey, check that seckey is valid first")
 		return nil
 	}
 	ECmultGen(&r, &n)
 	pk.SetXYZ(&r)
-	pk.GetPublicKey(out)
-	return out
+	return pk.GetPublicKey()
 }
 
 //1 on success
@@ -177,6 +177,9 @@ func SeckeyIsValid(seckey []byte) int {
 	}
 	var n Number
 	n.SetBytes(seckey)
+	//must not be zero
+	//must not be negative
+	//must be less than order of curve
 	if n.Sign() <= 0 {
 		return -1
 	}
@@ -197,7 +200,10 @@ func PubkeyIsValid(pubkey []byte) int {
 		//log.Panic("PubkeyIsValid, ERROR: pubkey parse fail, bad pubkey from private key")
 		return -1
 	}
-
+	if bytes.Equal(pub_test.Bytes(), pubkey) == false {
+		log.Panic("pubkey parses but serialize/deserialize roundtrip fails")
+	}
+	//this fails
 	if pub_test.IsValid() == false {
 		return -2
 	}

@@ -41,18 +41,20 @@ func (elem *XY) ParsePubkey(pub []byte) bool {
 
 // Returns serialized key in in compressed format: "<02> <X>",
 // eventually "<03> <X>"
-func (pub *XY) Bytes() (raw []byte) {
-	raw = make([]byte, 33)
+//33 bytes
+func (pub *XY) Bytes() []byte {
+	var raw []byte = make([]byte, 33)
 	if pub.Y.IsOdd() {
 		raw[0] = 0x03
 	} else {
 		raw[0] = 0x02
 	}
 	pub.X.GetB32(raw[1:])
-	return
+	return raw
 }
 
 // Returns serialized key in uncompressed format "<04> <X> <Y>"
+//65 bytes
 func (pub *XY) BytesUncompressed() (raw []byte) {
 	raw = make([]byte, 65)
 	raw[0] = 0x04
@@ -138,7 +140,9 @@ func (pk *XY) AddXY(a *XY) {
 	pk.SetXYZ(&xyz)
 }
 
-func (pk *XY) GetPublicKey(out []byte) {
+/*
+func (pk *XY) GetPublicKey() []byte {
+	var out []byte = make([]byte, 65, 65)
 	pk.X.GetB32(out[1:33])
 	if len(out) == 65 {
 		out[0] = 0x04
@@ -150,4 +154,24 @@ func (pk *XY) GetPublicKey(out []byte) {
 			out[0] = 0x02
 		}
 	}
+	return out
+}
+*/
+
+//use compact format
+//returns only 33 bytes
+//same as bytes()
+//TODO: deprecate, replace with .Bytes()
+func (pk *XY) GetPublicKey() []byte {
+	return pk.Bytes()
+	/*
+		var out []byte = make([]byte, 33, 33)
+		pk.X.GetB32(out[1:33])
+		if pk.Y.IsOdd() {
+			out[0] = 0x03
+		} else {
+			out[0] = 0x02
+		}
+		return out
+	*/
 }

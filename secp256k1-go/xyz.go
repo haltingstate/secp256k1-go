@@ -2,12 +2,11 @@ package secp256k1
 
 import (
 	"fmt"
-//	"encoding/hex"
+	//	"encoding/hex"
 )
 
-
 type XYZ struct {
-	X, Y, Z Field
+	X, Y, Z  Field
 	Infinity bool
 }
 
@@ -16,11 +15,10 @@ func (gej XYZ) Print(lab string) {
 		fmt.Println(lab + " - INFINITY")
 		return
 	}
-	fmt.Println(lab + ".X", gej.X.String())
-	fmt.Println(lab + ".Y", gej.Y.String())
-	fmt.Println(lab + ".Z", gej.Z.String())
+	fmt.Println(lab+".X", gej.X.String())
+	fmt.Println(lab+".Y", gej.Y.String())
+	fmt.Println(lab+".Z", gej.Z.String())
 }
-
 
 func (r *XYZ) SetXY(a *XY) {
 	r.Infinity = a.Infinity
@@ -39,9 +37,11 @@ func (a *XYZ) IsValid() bool {
 	}
 	var y2, x3, z2, z6 Field
 	a.Y.Sqr(&y2)
-	a.X.Sqr(&x3); x3.Mul(&x3, &a.X)
+	a.X.Sqr(&x3)
+	x3.Mul(&x3, &a.X)
 	a.Z.Sqr(&z2)
-	z2.Sqr(&z6); z6.Mul(&z6, &z2)
+	z2.Sqr(&z6)
+	z6.Mul(&z6, &z2)
 	z6.MulInt(7)
 	x3.SetAdd(&z6)
 	y2.Normalize()
@@ -72,26 +72,24 @@ func (a *XYZ) Equals(b *XYZ) bool {
 	return a.X.Equals(&b.X) && a.Y.Equals(&b.Y) && a.Z.Equals(&b.Z)
 }
 
-
 func (a *XYZ) precomp(w int) (pre []XYZ) {
 	var d XYZ
-	pre = make([]XYZ, (1 << (uint(w)-2)))
-	pre[0] = *a;
+	pre = make([]XYZ, (1 << (uint(w) - 2)))
+	pre[0] = *a
 	pre[0].Double(&d)
-	for i:=1 ; i<len(pre); i++ {
+	for i := 1; i < len(pre); i++ {
 		d.Add(&pre[i], &pre[i-1])
 	}
 	return
 }
-
 
 func ecmult_wnaf(wnaf []int, a *Number, w uint) (ret int) {
 	var zeroes uint
 	var X Number
 	X.Set(&a.Int)
 
-	for X.Sign()!=0 {
-		for X.Bit(0)==0 {
+	for X.Sign() != 0 {
+		for X.Bit(0) == 0 {
 			zeroes++
 			X.rsh(1)
 		}
@@ -101,13 +99,13 @@ func ecmult_wnaf(wnaf []int, a *Number, w uint) (ret int) {
 			ret++
 			zeroes--
 		}
-		if (word & (1 << (w-1))) != 0 {
+		if (word & (1 << (w - 1))) != 0 {
 			X.inc()
 			wnaf[ret] = (word - (1 << w))
 		} else {
 			wnaf[ret] = word
 		}
-		zeroes = w-1
+		zeroes = w - 1
 		ret++
 	}
 	return
@@ -155,7 +153,7 @@ func (a *XYZ) ECmult(r *XYZ, na, ng *Number) {
 	var tmpa XY
 	var n int
 
-	for i:=bits-1; i>=0; i-- {
+	for i := bits - 1; i >= 0; i-- {
 		r.Double(r)
 
 		if i < bits_na_1 {
@@ -200,7 +198,6 @@ func (a *XYZ) ECmult(r *XYZ, na, ng *Number) {
 	}
 }
 
-
 func (a *XYZ) Neg(r *XYZ) {
 	r.Infinity = a.Infinity
 	r.X = a.X
@@ -215,13 +212,12 @@ func (a *XYZ) mul_lambda(r *XYZ) {
 	r.X.Mul(&r.X, &TheCurve.beta)
 }
 
-
 func (a *XYZ) Double(r *XYZ) {
 	var t1, t2, t3, t4, t5 Field
 
 	t5 = a.Y
 	t5.Normalize()
-	if (a.Infinity || t5.IsZero()) {
+	if a.Infinity || t5.IsZero() {
 		r.Infinity = true
 		return
 	}
@@ -248,7 +244,6 @@ func (a *XYZ) Double(r *XYZ) {
 	r.Y.SetAdd(&t2)
 	r.Infinity = false
 }
-
 
 func (a *XYZ) AddXY(r *XYZ, b *XY) {
 	if a.Infinity {
@@ -278,7 +273,7 @@ func (a *XYZ) AddXY(r *XYZ, b *XY) {
 	if u1.Equals(&u2) {
 		s1.Normalize()
 		s2.Normalize()
-		if (s1.Equals(&s2)) {
+		if s1.Equals(&s2) {
 			a.Double(r)
 		} else {
 			r.Infinity = true
@@ -309,7 +304,6 @@ func (a *XYZ) AddXY(r *XYZ, b *XY) {
 	h3.Negate(&h3, 1)
 	r.Y.SetAdd(&h3)
 }
-
 
 func (a *XYZ) Add(r, b *XYZ) {
 	if a.Infinity {
@@ -368,13 +362,14 @@ func (a *XYZ) Add(r, b *XYZ) {
 	r.Y.SetAdd(&h3)
 }
 
-
 // r = a*G
+//TODO: Change to returning result
+//TODO: input should not be pointer
 func ECmultGen(r *XYZ, a *Number) {
-	var n Number;
+	var n Number
 	n.Set(&a.Int)
 	r.SetXY(&prec[0][n.rsh_x(4)])
-	for j:=1; j<64; j++ {
+	for j := 1; j < 64; j++ {
 		r.AddXY(r, &prec[j][n.rsh_x(4)])
 	}
 	r.AddXY(r, &fin)
