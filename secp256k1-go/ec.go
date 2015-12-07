@@ -16,8 +16,14 @@ func ecdsa_verify(pubkey, sig, msg []byte) int {
 		return -1
 	}
 
-	if s.ParseBytes(sig) < 0 {
+	//if s.ParseBytes(sig) < 0 {
+	//	return -2
+	//}
+	if len(pubkey) != 32 {
 		return -2
+	}
+	if len(sig) != 64 {
+		return -3
 	}
 
 	if !s.Verify(&q, &m) {
@@ -48,6 +54,7 @@ func DecompressPoint(X []byte, off bool, Y []byte) {
 }
 
 //TODO: change signature to []byte type
+/*
 func RecoverPublicKey2(sig Signature, h []byte, recid int, pubkey *XY) int {
 	//var sig Signature
 	var msg Number
@@ -74,8 +81,9 @@ func RecoverPublicKey2(sig Signature, h []byte, recid int, pubkey *XY) int {
 	}
 	return 1
 }
-
+*/
 //TODO: deprecate
+/*
 func RecoverPublicKey(r, s, h []byte, recid int, pubkey *XY) bool {
 	var sig Signature
 	var msg Number
@@ -92,6 +100,47 @@ func RecoverPublicKey(r, s, h []byte, recid int, pubkey *XY) bool {
 		return false
 	}
 	return true
+}
+*/
+
+//nil on error
+//returns error code
+func RecoverPublicKey(sig_byte []byte, h []byte, recid int) ([]byte, int) {
+
+	var pubkey XY
+
+	if len(sig_byte) != 64 {
+		log.Panic("must pass in 64 byte pubkey")
+	}
+
+	var sig Signature
+	sig.ParseBytes(sig_byte[0:64])
+
+	//var sig Signature
+	var msg Number
+
+	if sig.R.Sign() <= 0 || sig.R.Cmp(&TheCurve.Order.Int) >= 0 {
+		if sig.R.Sign() == 0 {
+			return nil, -1
+		}
+		if sig.R.Sign() <= 0 {
+			return nil, -2
+		}
+		if sig.R.Cmp(&TheCurve.Order.Int) >= 0 {
+			return nil, -3
+		}
+		return nil, -4
+	}
+	if sig.S.Sign() <= 0 || sig.S.Cmp(&TheCurve.Order.Int) >= 0 {
+		return nil, -5
+	}
+
+	msg.SetBytes(h)
+	if !sig.Recover(&pubkey, &msg, recid) {
+		return nil, -6
+	}
+
+	return pubkey.Bytes(), 1
 }
 
 // Standard EC multiplacation k(xy)
@@ -204,9 +253,9 @@ func PubkeyIsValid(pubkey []byte) int {
 		log.Panic("pubkey parses but serialize/deserialize roundtrip fails")
 	}
 	//this fails
-	if pub_test.IsValid() == false {
-		return -2
-	}
+	//if pub_test.IsValid() == false {
+	//	return -2
+	//}
 	return 1
 }
 

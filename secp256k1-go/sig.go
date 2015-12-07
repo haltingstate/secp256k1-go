@@ -50,6 +50,7 @@ func (sig *Signature) recompute(r2 *Number, pubkey *XY, message *Number) (ret bo
 	return
 }
 
+//TODO: return type, or nil on failure
 func (sig *Signature) Recover(pubkey *XY, m *Number, recid int) (ret bool) {
 	var rx, rn, u1, u2 Number
 	var fx Field
@@ -177,10 +178,12 @@ func (sig *Signature) Bytes() []byte {
 */
 
 //compressed signature parsing
-func (r *Signature) ParseBytes(sig []byte) int {
+func (r *Signature) ParseBytes(sig []byte) {
+	if len(sig) != 64 {
+		log.Panic()
+	}
 	r.R.SetBytes(sig[0:32])
 	r.S.SetBytes(sig[32:64])
-	return 64
 }
 
 //secp256k1_num_get_bin(sig64, 32, &sig.r);
@@ -217,6 +220,10 @@ func (sig *Signature) Bytes() []byte {
 		if bytes.Equal(sig.S.Bytes(), sig2.S.Bytes()) == false {
 			log.Panic("serialization failed 2")
 		}
+	}
+
+	if len(res.Bytes()) != 64 {
+		log.Panic()
 	}
 	return res.Bytes()
 }

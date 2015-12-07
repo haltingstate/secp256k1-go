@@ -534,7 +534,7 @@ func Test_ECDH22(t *testing.T) {
 
 }
 
-func Test_ECDH222(t *testing.T) {
+func Test_ECDH222a(t *testing.T) {
 
 	for i := 0; i < 1024; i++ {
 
@@ -603,6 +603,17 @@ func Test_Interop_sigs(t *testing.T) {
 		}
 	}
 }
+func Test_SeckeyValidity(t *testing.T) {
+
+	for i := 0; i < 64*1024; i++ {
+
+		seckey := RandByte(32)
+
+		if _VerifySeckey(seckey) != VerifySeckey(seckey) {
+			t.Fatal("Seckey validity mismatch, ", i, _VerifySeckey(seckey), VerifySeckey(seckey))
+		}
+	}
+}
 
 //test that same input, gives same output
 func Test_DeterministicKeyGen(t *testing.T) {
@@ -616,10 +627,10 @@ func Test_DeterministicKeyGen(t *testing.T) {
 		pubkey2, seckey2 := GenerateDeterministicKeyPair(seed1)
 
 		if bytes.Equal(seckey1, seckey2) == false {
-			t.Fatal("deterministic seckeys do not match")
+			t.Fatal("deterministic seckeys do not match", i)
 		}
 		if bytes.Equal(pubkey1, pubkey2) == false {
-			t.Fatal("deterministic pubkeys do not match")
+			t.Fatal("deterministic pubkeys do not match", i)
 		}
 	}
 }
@@ -636,10 +647,10 @@ func Test_ECDH_interop1(t *testing.T) {
 		pubkey2, seckey2 := GenerateDeterministicKeyPair(seed1)
 
 		if bytes.Equal(seckey1, seckey2) == false {
-			t.Fatal("deterministic seckeys do not match")
+			t.Fatal("deterministic seckeys do not match", i)
 		}
 		if bytes.Equal(pubkey1, pubkey2) == false {
-			t.Fatal("deterministic pubkeys do not match")
+			t.Fatal("deterministic pubkeys do not match", i)
 		}
 
 		puba := _ECDH(pubkey1, seckey2)

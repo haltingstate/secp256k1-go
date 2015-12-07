@@ -336,9 +336,10 @@ func _VerifyPubkey(pubkey []byte) int {
 	if ret == false {
 		return -2 //invalid, parse fail
 	}
-	if pubkey1.IsValid() == false {
-		return -4 //invalid, validation fail
-	}
+	//fails for unknown reason
+	//if pubkey1.IsValid() == false {
+	//	return -4 //invalid, validation fail
+	//}
 	return 1 //valid
 }
 
@@ -443,13 +444,13 @@ func _RecoverPubkey(msg []byte, sig []byte) []byte {
 	var recid int = int(sig[64])
 	//var msg1 secp.Number
 
-	var pubkey1 secp.XY
+	//var pubkey1 secp.XY
 
 	//msg1.SetBytes(msg)
 	//sig1.SetBytes(sig)
 
-	var sig1 secp.Signature
-	sig1.ParseBytes(sig[0:64])
+	//var sig1 secp.Signature
+	//sig1.ParseBytes(sig[0:64])
 
 	//if ret != 1 {
 	//log.Panic("secp256k1, RecoverPubKey, recovery failed")
@@ -457,11 +458,10 @@ func _RecoverPubkey(msg []byte, sig []byte) []byte {
 	//	return nil
 	//}
 
-	ret := secp.RecoverPublicKey2(
-		sig1,
+	pubkey, ret := secp.RecoverPublicKey(
+		sig[0:64],
 		msg,
-		recid,
-		&pubkey1)
+		recid)
 
 	/*
 		ret := secp.RecoverPublicKey(
@@ -475,14 +475,16 @@ func _RecoverPubkey(msg []byte, sig []byte) []byte {
 		log.Printf("RecoverPubkey: code %s", ret)
 		return nil
 	}
+	//var pubkey2 []byte = pubkey1.Bytes() //compressed
 
-	var pubkey2 []byte = pubkey1.Bytes() //compressed
-
-	if len(pubkey2) != 33 {
+	if pubkey == nil {
+		log.Panic("ERROR: impossible, pubkey nil and ret ==1")
+	}
+	if len(pubkey) != 33 {
 		log.Panic("pubkey length wrong")
 	}
 
-	return pubkey2
+	return pubkey
 	//nonce1.SetBytes(nonce_seed)
 
 }

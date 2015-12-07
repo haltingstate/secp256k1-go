@@ -119,6 +119,7 @@ new_seckey:
 }
 
 //returns nil on error
+//Does not return same output as generator does
 func PubkeyFromSeckey(SecKey []byte) []byte {
 	if len(SecKey) != 32 {
 		log.Panic("PubkeyFromSeckey: invalid length")

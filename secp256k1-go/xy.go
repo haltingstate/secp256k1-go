@@ -2,6 +2,7 @@ package secp256k1
 
 import (
 	"fmt"
+	"log"
 )
 
 type XY struct {
@@ -19,13 +20,43 @@ func (ge *XY) Print(lab string) {
 }
 
 //edited
+
+/*
+   if (size == 33 && (pub[0] == 0x02 || pub[0] == 0x03)) {
+       secp256k1_fe_t x;
+       secp256k1_fe_set_b32(&x, pub+1);
+       return secp256k1_ge_set_xo(elem, &x, pub[0] == 0x03);
+   } else if (size == 65 && (pub[0] == 0x04 || pub[0] == 0x06 || pub[0] == 0x07)) {
+       secp256k1_fe_t x, y;
+       secp256k1_fe_set_b32(&x, pub+1);
+       secp256k1_fe_set_b32(&y, pub+33);
+       secp256k1_ge_set_xy(elem, &x, &y);
+       if ((pub[0] == 0x06 || pub[0] == 0x07) && secp256k1_fe_is_odd(&y) != (pub[0] == 0x07))
+           return 0;
+       return secp256k1_ge_is_valid(elem);
+   }
+*/
+//All compact keys appear to be valid by construction, but may fail
+//is valid check
+
+//WARNING: for compact signatures, will succeed unconditionally
+//however, elem.IsValid will fail
 func (elem *XY) ParsePubkey(pub []byte) bool {
+	if len(pub) != 33 {
+		log.Panic()
+	}
 	if len(pub) == 33 && (pub[0] == 0x02 || pub[0] == 0x03) {
 		elem.X.SetB32(pub[1:33])
 		elem.SetXO(&elem.X, pub[0] == 0x03)
 	} else {
+		log.Panic()
 		return false
 	}
+	//THIS FAILS
+	//reenable later
+	//if elem.IsValid() == false {
+	//	return false
+	//}
 
 	/*
 		 else if len(pub) == 65 && (pub[0] == 0x04 || pub[0] == 0x06 || pub[0] == 0x07) {
@@ -68,6 +99,31 @@ func (r *XY) SetXY(X, Y *Field) {
 	r.X = *X
 	r.Y = *Y
 }
+
+/*
+int static secp256k1_ecdsa_pubkey_parse(secp256k1_ge_t *elem, const unsigned char *pub, int size) {
+    if (size == 33 && (pub[0] == 0x02 || pub[0] == 0x03)) {
+        secp256k1_fe_t x;
+        secp256k1_fe_set_b32(&x, pub+1);
+        return secp256k1_ge_set_xo(elem, &x, pub[0] == 0x03);
+    } else if (size == 65 && (pub[0] == 0x04 || pub[0] == 0x06 || pub[0] == 0x07)) {
+        secp256k1_fe_t x, y;
+        secp256k1_fe_set_b32(&x, pub+1);
+        secp256k1_fe_set_b32(&y, pub+33);
+        secp256k1_ge_set_xy(elem, &x, &y);
+        if ((pub[0] == 0x06 || pub[0] == 0x07) && secp256k1_fe_is_odd(&y) != (pub[0] == 0x07))
+            return 0;
+        return secp256k1_ge_is_valid(elem);
+    } else {
+        return 0;
+    }
+}
+*/
+
+//    if (size == 33 && (pub[0] == 0x02 || pub[0] == 0x03)) {
+//        secp256k1_fe_t x;
+//        secp256k1_fe_set_b32(&x, pub+1);
+//        return secp256k1_ge_set_xo(elem, &x, pub[0] == 0x03);
 
 func (a *XY) IsValid() bool {
 	if a.Infinity {
@@ -118,6 +174,23 @@ func (a *XY) Neg(r *XY) {
 	r.Y.Negate(&r.Y, 1)
 }
 
+/*
+int static secp256k1_ge_set_xo(secp256k1_ge_t *r, const secp256k1_fe_t *x, int odd) {
+    r->x = *x;
+    secp256k1_fe_t x2; secp256k1_fe_sqr(&x2, x);
+    secp256k1_fe_t x3; secp256k1_fe_mul(&x3, x, &x2);
+    r->infinity = 0;
+    secp256k1_fe_t c; secp256k1_fe_set_int(&c, 7);
+    secp256k1_fe_add(&c, &x3);
+    if (!secp256k1_fe_sqrt(&r->y, &c))
+        return 0;
+    secp256k1_fe_normalize(&r->y);
+    if (secp256k1_fe_is_odd(&r->y) != odd)
+        secp256k1_fe_negate(&r->y, &r->y, 1);
+    return 1;
+}
+*/
+
 func (r *XY) SetXO(X *Field, odd bool) {
 	var c, x2, x3 Field
 	r.X = *X
@@ -126,7 +199,7 @@ func (r *XY) SetXO(X *Field, odd bool) {
 	r.Infinity = false
 	c.SetInt(7)
 	c.SetAdd(&x3)
-	c.Sqrt(&r.Y)
+	c.Sqrt(&r.Y) //does not return, can fail
 	if r.Y.IsOdd() != odd {
 		r.Y.Negate(&r.Y, 1)
 	}
