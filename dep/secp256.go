@@ -17,6 +17,15 @@ import "C"
 //for osx 'xcode-select --install'
 //in 10.9 (mavericks) it fails. See README.md
 
+/*
+#define USE_SCALAR_8X32
+#define USE_SCALAR_INV_BUILTIN
+#include "./secp256k1/include/secp256k1.h"
+#include "./secp256k1/src/secp256k1.c"
+#include "./secp256k1/include/secp256k1_ecdh.h"
+*/
+// rs
+
 import (
 	"unsafe"
 	//"fmt"
@@ -24,48 +33,6 @@ import (
 	"bytes"
 	"log"
 )
-
-type Pub [33]byte
-
-func PubFromBytes(in []byte) Pub {
-
-	if len(in) != 33 {
-		log.Panic()
-	}
-
-	pub := Pub{}
-	for i := 0; i < 33; i++ {
-		pubkey[i] = in[i]
-	}
-}
-
-type SecKey [32]byte
-
-func SecFromBytes(in []byte) Sec {
-
-	if len(in) != 32 {
-		log.Panic()
-	}
-
-	sec := Sec{}
-	for i := 0; i < 32; i++ {
-		seckey[i] = in[i]
-	}
-}
-
-type Sig [64 + 1]byte
-
-func SigFromBytes(in []byte) Sig {
-
-	if len(in) != 32 {
-		log.Panic()
-	}
-
-	sig := Sig{}
-	for i := 0; i < 65; i++ {
-		sig[i] = in[i]
-	}
-}
 
 //#define USE_FIELD_5X64
 
@@ -98,6 +65,18 @@ int secp256k1_ecdsa_pubkey_create(
     const unsigned char *seckey, int compressed);
 */
 
+/*
+int secp256k1_ecdsa_seckey_verify(const unsigned char *seckey) {
+    secp256k1_num_t sec;
+    secp256k1_num_init(&sec);
+    secp256k1_num_set_bin(&sec, seckey, 32);
+    int ret = !secp256k1_num_is_zero(&sec) &&
+              (secp256k1_num_cmp(&sec, &secp256k1_ge_consts->order) < 0);
+    secp256k1_num_free(&sec);
+    return ret;
+}
+*/
+
 /** Compute the public key for a secret key.
  *  In:     compressed: whether the computed public key should be compressed
  *          seckey:     pointer to a 32-byte private key.
@@ -111,7 +90,7 @@ int secp256k1_ecdsa_pubkey_create(
 
 //pubkey, seckey
 
-func GenerateKeyPair() (Pub, Sec) {
+func GenerateKeyPair() ([]byte, []byte) {
 
 	pubkey_len := C.int(33)
 	const seckey_len = 32
@@ -125,6 +104,7 @@ new_seckey:
 	var seckey []byte = RandByte(seckey_len)
 	var seckey_ptr *C.uchar = (*C.uchar)(unsafe.Pointer(&seckey[0]))
 
+	//must be less than order of curve
 	ret = C.secp256k1_ecdsa_seckey_verify(seckey_ptr)
 
 	if ret != 1 {
@@ -144,11 +124,12 @@ new_seckey:
 		goto new_seckey
 	}
 
-	return PubFromBytes(pubkey), SecFromBytes(seckey)
+	return pubkey, seckey
 }
 
 //returns nil on error
-func PubkeyFromSeckey(SecKey []byte) Pub {
+//Does not return same output as generator does
+func PubkeyFromSeckey(SecKey []byte) []byte {
 	if len(SecKey) != 32 {
 		log.Panic("PubkeyFromSeckey: invalid length")
 	}
@@ -176,11 +157,11 @@ func PubkeyFromSeckey(SecKey []byte) Pub {
 	if ret != 1 {
 		return nil
 	}
-	return PubFromBytes(pubkey)
+	return pubkey
 }
 
 //returns nil on error
-func UncompressedPubkeyFromSeckey(SecKey []byte) Pub {
+func UncompressedPubkeyFromSeckey(SecKey []byte) []byte {
 	if len(SecKey) != 32 {
 		log.Panic("PubkeyFromSeckey: invalid length")
 	}
@@ -202,7 +183,7 @@ func UncompressedPubkeyFromSeckey(SecKey []byte) Pub {
 	if ret != 1 {
 		return nil
 	}
-	return PubFromBytes(pubkey)
+	return pubkey
 }
 
 //generates deterministic keypair with weak SHA256 hash of seed
@@ -225,7 +206,9 @@ func generateDeterministicKeyPair(seed []byte) ([]byte, []byte) {
 new_seckey:
 	seed = SumSHA256(seed[0:32])
 	copy(seckey[0:32], seed[0:32])
+	//TODO: check this function
 	if C.secp256k1_ecdsa_seckey_verify(seckey_ptr) != 1 {
+		log.Printf("generateDeterministicKeyPair, secp256k1_ecdsa_seckey_verify fail")
 		goto new_seckey //rehash seckey until it succeeds, almost never happens
 	}
 
@@ -263,19 +246,19 @@ func Secp256k1Hash(hash []byte) []byte {
 }
 
 //generate a single secure key
-func GenerateDeterministicKeyPair(seed []byte) (Pub, Sec) {
+func GenerateDeterministicKeyPair(seed []byte) ([]byte, []byte) {
 	_, pubkey, seckey := DeterministicKeyPairIterator(seed)
-	return PubFromBytes(pubkey), SecFromBytes(seckey)
+	return pubkey, seckey
 }
 
 //Iterator for deterministic keypair generation. Returns SHA256, Pubkey, Seckey
 //Feed SHA256 back into function to generate sequence of seckeys
 //If private key is diclosed, should not be able to compute future or past keys in sequence
-func DeterministicKeyPairIterator(seed_in []byte) ([]byte, Pub, Sec) {
+func DeterministicKeyPairIterator(seed_in []byte) ([]byte, []byte, []byte) {
 	seed1 := Secp256k1Hash(seed_in) //make it difficult to derive future seckeys from previous seckeys
 	seed2 := SumSHA256(append(seed_in, seed1...))
 	pubkey, seckey := generateDeterministicKeyPair(seed2) //this is our seckey
-	return seed1, PubFromBytes(pubkey), SecFromBytes(seckey)
+	return seed1, pubkey, seckey
 }
 
 /*
@@ -299,7 +282,7 @@ int secp256k1_ecdsa_sign_compact(const unsigned char *msg, int msglen,
 */
 
 //Rename SignHash
-func Sign(msg []byte, seckey SecKey) Sig {
+func Sign(msg []byte, seckey []byte) []byte {
 
 	if len(seckey) != 32 {
 		log.Panic("Sign, Invalid seckey length")
@@ -338,11 +321,11 @@ func Sign(msg []byte, seckey SecKey) Sig {
 		return Sign(msg, seckey) //nonce invalid, retry
 	}
 
-	return SigFromBytes(sig)
+	return sig
 }
 
 //generate signature in repeatable way
-func SignDeterministic(msg []byte, seckey SecKey, nonce_seed []byte) []byte {
+func SignDeterministic(msg []byte, seckey []byte, nonce_seed []byte) []byte {
 	nonce := SumSHA256(nonce_seed) //deterministicly generate nonce
 
 	var sig []byte = make([]byte, 65)
