@@ -3,10 +3,12 @@ package secp256k1
 /*
 #cgo CFLAGS: -std=gnu99 -Wno-error
 #cgo LDFLAGS: -lgmp
-#cgo CFLAGS: -Wno-error
+#cgo CFLAGS: -Wno-error -I ./seckp256k1
 #define USE_FIELD_10X26
 #define USE_NUM_GMP
 #define USE_FIELD_INV_BUILTIN
+
+
 #include "./secp256k1/src/secp256k1.c"
 */
 import "C"
@@ -197,7 +199,9 @@ func generateDeterministicKeyPair(seed []byte) ([]byte, []byte) {
 new_seckey:
 	seed = SumSHA256(seed[0:32])
 	copy(seckey[0:32], seed[0:32])
+	//TODO: check this function
 	if C.secp256k1_ecdsa_seckey_verify(seckey_ptr) != 1 {
+		log.Printf("generateDeterministicKeyPair, secp256k1_ecdsa_seckey_verify fail")
 		goto new_seckey //rehash seckey until it succeeds, almost never happens
 	}
 

@@ -862,3 +862,134 @@ func TestSecp256k1_hash(t *testing.T) {
 
 	}
 }
+
+func TestMain1(t *testing.T) {
+	for i := 0; i < 6*1024; i++ {
+
+		seed := RandByte(32)
+		//seed2 := RandByte(32)
+
+		pubkey1, seckey1 := _GenerateDeterministicKeyPair(seed)
+		pubkey2, seckey2 := _GenerateDeterministicKeyPair(seed)
+
+		if bytes.Equal(seckey1, seckey2) == false {
+			t.Fatal("deterministic seckeys do not match", i)
+		}
+		if bytes.Equal(pubkey1, pubkey2) == false {
+			t.Fatal("deterministic pubkeys do not match", i)
+		}
+	}
+}
+
+func TestMain2(t *testing.T) {
+
+	fail := false
+	for i := 0; i < 6*1024; i++ {
+
+		seed := RandByte(32)
+		//seed2 := RandByte(32)
+
+		pubkey1, seckey1 := _GenerateDeterministicKeyPair(seed)
+		pubkey2, seckey2 := GenerateDeterministicKeyPair(seed)
+
+		if bytes.Equal(seckey1, seckey2) == false {
+			fail = true
+			log.Printf("deterministic seckeys do not match %d", i)
+		}
+		if bytes.Equal(pubkey1, pubkey2) == false {
+			fail = true
+			log.Printf("deterministic pubkeys do not match %d", i)
+		}
+	}
+
+	if fail == true {
+		log.Fatal("Failed")
+	}
+}
+
+func TestMain3(t *testing.T) {
+
+	fail := false
+	for i := 0; i < 16*1024; i++ {
+
+		seed := RandByte(32)
+		//seed2 := RandByte(32)
+
+		pubkey1, seckey1 := _generateDeterministicKeyPair(seed)
+		pubkey2, seckey2 := generateDeterministicKeyPair(seed)
+
+		if bytes.Equal(seckey1, seckey2) == false {
+			fail = true
+			log.Printf("deterministic seckeys do not match %d", i)
+			log.Fatal()
+		}
+		sechex := hex.EncodeToString(seckey1)
+
+		if bytes.Equal(pubkey1, pubkey2) == false {
+			fail = true
+			log.Printf("deterministic pubkeys do not match %d", i)
+
+			seedhex := hex.EncodeToString(seed)
+			pubhex1 := hex.EncodeToString(pubkey1)
+			pubhex2 := hex.EncodeToString(pubkey2)
+
+			log.Printf("seed= %s", seedhex)
+			log.Printf("seckey  = %s", sechex)
+			log.Printf("pubkey1 = %s", pubhex1)
+			log.Printf("pubkey2 = %s", pubhex2)
+		}
+	}
+
+	if fail == true {
+		log.Fatal("Failed")
+	}
+}
+
+//2015/12/13 03:02:44 seckey  = 27fa25141c11169208c822e8bb6a1dcd3f991dfd20f393a184498434695e0e14
+//2015/12/13 03:02:44 pubkey1 = 03bd957a507e3f7fdeeb7487613acfbd931a600f9d0806000042fc54bc548a2e05
+//2015/12/13 03:02:44 pubkey2 = 03bd957a507e3f7fdeeb7487613acfbd931a600f9d0806400042fc54bc548a2e05
+
+var _test_seeds []string = []string{
+	"ee78b2fb5bef47aaab1abf54106b3b022ed3d68fdd24b5cfdd6e639e1c7baa6f",
+	"0e86692d755fd39a51acf6c935bdf425a6aad03a7914867e3f6db27371c966b4",
+}
+
+func TestMain4(t *testing.T) {
+	//seed := RandByte(32)
+	//seed2 := RandByte(32)
+
+	for i := 0; i < len(_test_seeds); i++ {
+
+		//seed, _ := hex.DecodeString("ee78b2fb5bef47aaab1abf54106b3b022ed3d68fdd24b5cfdd6e639e1c7baa6f")
+		seed, _ := hex.DecodeString(_test_seeds[i])
+
+		pubkey1, seckey1 := _generateDeterministicKeyPair(seed)
+		pubkey2, seckey2 := generateDeterministicKeyPair(seed)
+
+		if bytes.Equal(seckey1, seckey2) == false {
+
+			log.Printf("deterministic seckeys do not match")
+			log.Fatal()
+		}
+
+		sechex := hex.EncodeToString(seckey1)
+
+		if bytes.Equal(pubkey1, pubkey2) == false {
+
+			log.Printf("deterministic pubkeys do not match")
+
+			seedhex := hex.EncodeToString(seed)
+			pubhex1 := hex.EncodeToString(pubkey1)
+			pubhex2 := hex.EncodeToString(pubkey2)
+
+			log.Printf("seed  = %s", seedhex)
+			log.Printf("seckey  = %s", sechex)
+			log.Printf("pubkey1 = %s", pubhex1)
+			log.Printf("pubkey2 = %s", pubhex2)
+			//log.Fatal()
+		}
+	}
+
+}
+
+//_PubkeyFromSeckey

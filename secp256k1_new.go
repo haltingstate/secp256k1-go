@@ -4,8 +4,9 @@ import (
 	//"unsafe"
 	//"fmt"
 	//"errors"
-	secp "./secp256k1-go"
+	//secp "./secp256k1-go"
 	"bytes"
+	secp "github.com/haltingstate/secp256k1-go/secp256k1-go2"
 	"log"
 )
 
@@ -66,6 +67,9 @@ new_seckey:
 }
 
 //must succeed
+//TODO; hash on fail
+//TOO: must match, result of private key from deterministic gen?
+//deterministic gen will always return a valid private key
 func _PubkeyFromSeckey(seckey []byte) []byte {
 	if len(seckey) != 32 {
 		log.Panic("PubkeyFromSeckey: invalid length")
@@ -155,10 +159,12 @@ new_seckey:
 		log.Panic()
 	}
 	if secp.SeckeyIsValid(seckey) != 1 {
+		log.Printf("_generateDeterministicKeyPair, secp.SeckeyIsValid fail")
 		goto new_seckey //regen
 	}
 
 	//pubkey := secp.BaseMultiply(seckey) //always returns true
+	//use _PubkeyFromSeckey?
 	var pubkey []byte = secp.GeneratePublicKey(seckey)
 
 	if pubkey == nil {
