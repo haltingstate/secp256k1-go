@@ -73,7 +73,9 @@ func (elem *XY) ParsePubkey(pub []byte) bool {
 // Returns serialized key in in compressed format: "<02> <X>",
 // eventually "<03> <X>"
 //33 bytes
-func (pub *XY) Bytes() []byte {
+func (pub XY) Bytes() []byte {
+	pub.X.Normalize() // See GitHub issue #15
+
 	var raw []byte = make([]byte, 33)
 	if pub.Y.IsOdd() {
 		raw[0] = 0x03
@@ -87,6 +89,9 @@ func (pub *XY) Bytes() []byte {
 // Returns serialized key in uncompressed format "<04> <X> <Y>"
 //65 bytes
 func (pub *XY) BytesUncompressed() (raw []byte) {
+	pub.X.Normalize() // See GitHub issue #15
+	pub.Y.Normalize() // See GitHub issue #15
+
 	raw = make([]byte, 65)
 	raw[0] = 0x04
 	pub.X.GetB32(raw[1:33])
@@ -203,6 +208,8 @@ func (r *XY) SetXO(X *Field, odd bool) {
 	if r.Y.IsOdd() != odd {
 		r.Y.Negate(&r.Y, 1)
 	}
+
+	//r.X.Normalize() // See GitHub issue #15
 	r.Y.Normalize()
 }
 

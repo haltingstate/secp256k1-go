@@ -158,6 +158,10 @@ func Multiply(xy, k []byte) []byte {
 	na.SetBytes(k)
 	xyz.ECmult(&xyz, &na, &nzero)
 	pk.SetXYZ(&xyz)
+
+	if pk.IsValid() == false {
+		log.Panic()
+	}
 	return pk.GetPublicKey()
 }
 
@@ -182,6 +186,25 @@ func BaseMultiply2(k []byte) []byte {
 }
 */
 
+//test assumptions
+func _pubkey_test(pk XY) {
+
+	if pk.IsValid() == false {
+		log.Panic("IMPOSSIBLE3: pubkey invalid")
+	}
+	var pk2 XY
+	retb := pk2.ParsePubkey(pk.Bytes())
+	if retb == false {
+		log.Panic("IMPOSSIBLE2: parse failed")
+	}
+	if pk2.IsValid() == false {
+		log.Panic("IMPOSSIBLE3: parse failed non valid key")
+	}
+	if PubkeyIsValid(pk2.Bytes()) != 1 {
+		log.Panic("IMPOSSIBLE4: pubkey failed")
+	}
+}
+
 func BaseMultiply(k []byte) []byte {
 	var r XYZ
 	var n Number
@@ -192,7 +215,10 @@ func BaseMultiply(k []byte) []byte {
 	if pk.IsValid() == false {
 		log.Panic() //should not occur
 	}
-	return pk.GetPublicKey()
+
+	_pubkey_test(pk)
+
+	return pk.Bytes()
 }
 
 // out = G*k + xy
@@ -210,12 +236,16 @@ func BaseMultiplyAdd(xy, k []byte) []byte {
 	ECmultGen(&r, &n)
 	r.AddXY(&r, &pk)
 	pk.SetXYZ(&r)
-	return pk.GetPublicKey()
+
+	_pubkey_test(pk)
+	return pk.Bytes()
 }
 
 //returns nil on failure
 //crash rather than fail
 func GeneratePublicKey(k []byte) []byte {
+
+	//log.Panic()
 	if len(k) != 32 {
 		log.Panic()
 	}
@@ -236,7 +266,8 @@ func GeneratePublicKey(k []byte) []byte {
 	if pk.IsValid() == false {
 		log.Panic() //should not occur
 	}
-	return pk.GetPublicKey()
+	_pubkey_test(pk)
+	return pk.Bytes()
 }
 
 //1 on success
